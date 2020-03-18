@@ -20,7 +20,7 @@ namespace System.Drawing
             return colors;
         }
 
-        private static void FillWithProperties(Dictionary<string, Color> dictionary, Type typeWithColors)
+        private static void FillWithProperties(Dictionary<string, Color> dictionary, [DynamicallyAccessedMembers(MemberKinds.PublicProperties)] Type typeWithColors)
         {
             foreach (PropertyInfo prop in typeWithColors.GetProperties(BindingFlags.Public | BindingFlags.Static))
             {

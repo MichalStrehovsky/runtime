@@ -25,24 +25,6 @@ namespace System.Text.Json.Serialization.Converters
             return typeof(IEnumerable).IsAssignableFrom(typeToConvert);
         }
 
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.ArrayConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.ConcurrentQueueOfTConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.ConcurrentStackOfTConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.DefaultArrayConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.DictionaryOfStringTValueConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.ICollectionOfTConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.IDictionaryOfStringTValueConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.IEnumerableOfTConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.IEnumerableWithAddMethodConverter`1")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.IListConverter`1")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.IListOfTConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.ImmutableDictionaryOfStringTValueConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.ImmutableEnumerableOfTConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.IReadOnlyDictionaryOfStringTValueConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.ISetOfTConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.ListOfTConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.QueueOfTConverter`2")]
-        [PreserveDependency(".ctor", "System.Text.Json.Serialization.Converters.StackOfTConverter`2")]
         public override JsonConverter CreateConverter(Type typeToConvert, JsonSerializerOptions options)
         {
             Type converterType = null!;

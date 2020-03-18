@@ -11,6 +11,8 @@ namespace System.CodeDom.Compiler
     public sealed class CompilerInfo
     {
         internal readonly IDictionary<string, string> _providerOptions = new Dictionary<string, string>();
+
+        [DynamicallyAccessedMembers(MemberKinds.Constructors)]
         internal string _codeDomProviderTypeName; // This can never by null
         internal CompilerParameters _compilerParams; // This can never by null
         internal string[] _compilerLanguages; // This can never by null
@@ -25,6 +27,7 @@ namespace System.CodeDom.Compiler
 
         public Type CodeDomProviderType
         {
+            [DynamicallyAccessedMembers(MemberKinds.Constructors)]
             get
             {
                 if (_type == null)
@@ -84,7 +87,7 @@ namespace System.CodeDom.Compiler
 
         public CompilerParameters CreateDefaultCompilerParameters() => CloneCompilerParameters();
 
-        internal CompilerInfo(CompilerParameters compilerParams, string codeDomProviderTypeName)
+        internal CompilerInfo(CompilerParameters compilerParams, [DynamicallyAccessedMembers(MemberKinds.Constructors)]string codeDomProviderTypeName)
         {
             _codeDomProviderTypeName = codeDomProviderTypeName;
             _compilerParams = compilerParams ?? new CompilerParameters();

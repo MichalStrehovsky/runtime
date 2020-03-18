@@ -160,16 +160,7 @@ namespace System.Linq.Expressions.Interpreter
 #endif
 
 #if FEATURE_DLG_INVOKE
-        [PreserveDependency(".ctor", "System.Linq.Expressions.Interpreter.ActionCallInstruction")]
-        [PreserveDependency(".ctor", "System.Linq.Expressions.Interpreter.ActionCallInstruction`1")]
-        [PreserveDependency(".ctor", "System.Linq.Expressions.Interpreter.ActionCallInstruction`2")]
-        [PreserveDependency(".ctor", "System.Linq.Expressions.Interpreter.ActionCallInstruction`3")]
-        [PreserveDependency(".ctor", "System.Linq.Expressions.Interpreter.ActionCallInstruction`4")]
-        [PreserveDependency(".ctor", "System.Linq.Expressions.Interpreter.FuncCallInstruction`1")]
-        [PreserveDependency(".ctor", "System.Linq.Expressions.Interpreter.FuncCallInstruction`2")]
-        [PreserveDependency(".ctor", "System.Linq.Expressions.Interpreter.FuncCallInstruction`3")]
-        [PreserveDependency(".ctor", "System.Linq.Expressions.Interpreter.FuncCallInstruction`4")]
-        [PreserveDependency(".ctor", "System.Linq.Expressions.Interpreter.FuncCallInstruction`5")]
+        [return: DynamicallyAccessedMembers(MemberKinds.Constructor)]
         private static Type GetHelperType(MethodInfo info, Type[] arrTypes)
         {
             Type t;

@@ -85,9 +85,9 @@ namespace System.ComponentModel
         /// AddProvider methods to define a type description provider for interface types.
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Advanced)]
+        [DynamicallyAccessedMembers(MemberKinds.Constructor)]
         public static Type InterfaceType
         {
-            [PreserveDependency(".ctor", "System.ComponentModel.TypeDescriptor/TypeDescriptorInterface")]
             get => typeof(TypeDescriptorInterface);
         }
 
@@ -2319,8 +2319,7 @@ namespace System.ComponentModel
         [EditorBrowsable(EditorBrowsableState.Advanced)]
         public static Type ComObjectType
         {
-            [PreserveDependency(".ctor", "System.ComponentModel.TypeDescriptor/TypeDescriptorComObject")]
-            [PreserveDependency(".ctor", "System.ComponentModel.TypeDescriptor/ComNativeDescriptorProxy")] // TODO: https://github.com/mono/linker/issues/801
+            [DynamicallyAccessedMembers(MemberKinds.Constructor)]
             get => typeof(TypeDescriptorComObject);
         }
 

@@ -31,7 +31,7 @@ namespace System.ComponentModel
         /// class, using the specified type as the data converter for the object this attribute
         /// is bound to.
         /// </summary>
-        public TypeConverterAttribute(Type type)
+        public TypeConverterAttribute([DynamicallyAccessedMembers(MemberKinds.Constructor)] Type type)
         {
             if (type == null)
             {
@@ -46,7 +46,7 @@ namespace System.ComponentModel
         /// class, using the specified type name as the data converter for the object this attribute
         /// is bound to.
         /// </summary>
-        public TypeConverterAttribute(string typeName)
+        public TypeConverterAttribute([DynamicallyAccessedMembers(MemberKinds.Constructor)] string typeName)
         {
             if (typeName == null)
             {
@@ -60,6 +60,7 @@ namespace System.ComponentModel
         /// Gets the fully qualified type name of the <see cref='System.Type'/> to use as a
         /// converter for the object this attribute is bound to.
         /// </summary>
+        [DynamicallyAccessedMembers(MemberKinds.Constructor)]
         public string ConverterTypeName { get; }
 
         public override bool Equals(object? obj)

@@ -276,6 +276,7 @@ namespace System.Runtime.CompilerServices
 
 #if FEATURE_COMPILE
         // TODO https://github.com/mono/linker/issues/799: Consolidate these attributes when possible.
+        // This code should be rewritten to not use String.Concat to concatenate type names.
         [PreserveDependency("NoMatch1`2", "System.Dynamic.UpdateDelegates")]
         [PreserveDependency("NoMatch2`3", "System.Dynamic.UpdateDelegates")]
         [PreserveDependency("NoMatch3`4", "System.Dynamic.UpdateDelegates")]

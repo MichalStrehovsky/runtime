@@ -39,7 +39,7 @@ namespace Microsoft.Extensions.Internal
         /// <param name="instanceType">The type to activate</param>
         /// <param name="parameters">Constructor arguments not provided by the <paramref name="provider"/>.</param>
         /// <returns>An activated object of type instanceType</returns>
-        public static object CreateInstance(IServiceProvider provider, Type instanceType, params object[] parameters)
+        public static object CreateInstance(IServiceProvider provider, [DynamicallyAccessedMembers(MemberKinds.Constructors)]Type instanceType, params object[] parameters)
         {
             int bestLength = -1;
             var seenPreferred = false;

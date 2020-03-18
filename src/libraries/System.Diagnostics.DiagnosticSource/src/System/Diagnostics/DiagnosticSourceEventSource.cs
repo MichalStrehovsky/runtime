@@ -891,9 +891,6 @@ namespace System.Diagnostics
                     /// <summary>
                     /// Create a property fetcher for a propertyName
                     /// </summary>
-                    [PreserveDependency(".ctor(System.Type)", "System.Diagnostics.DiagnosticSourceEventSource/TransformSpec/PropertySpec/PropertyFetch/EnumeratePropertyFetch`1")]
-                    [PreserveDependency(".ctor(System.Type, System.Reflection.PropertyInfo)", "System.Diagnostics.DiagnosticSourceEventSource/TransformSpec/PropertySpec/PropertyFetch/RefTypedFetchProperty`2")]
-                    [PreserveDependency(".ctor(System.Type, System.Reflection.PropertyInfo)", "System.Diagnostics.DiagnosticSourceEventSource/TransformSpec/PropertySpec/PropertyFetch/ValueTypedFetchProperty`2")]
                     public static PropertyFetch FetcherForProperty(Type? type, string propertyName)
                     {
                         if (propertyName == null)

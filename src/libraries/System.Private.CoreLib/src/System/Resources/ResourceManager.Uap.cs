@@ -61,7 +61,6 @@ namespace System.Resources
         // The attribute is necessary because linker can't add new assemblies to the closure when recognizing Type.GetType
         // so even though the GetType call below is analyzable, the PreserveDependency is still necessary to actually include
         // the assembly in the trimmed closure.
-        [PreserveDependency(".ctor()", "System.Resources.WindowsRuntimeResourceManager", "System.Runtime.WindowsRuntime")]
         internal static WindowsRuntimeResourceManagerBase GetWinRTResourceManager()
         {
             Type WinRTResourceManagerType = Type.GetType("System.Resources.WindowsRuntimeResourceManager, System.Runtime.WindowsRuntime", throwOnError: true)!;
