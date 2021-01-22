@@ -3956,7 +3956,7 @@ GenTree* Compiler::impIntrinsic(GenTree*                newobjThis,
             // Call the regular function.
             break;
 
-        case CORINFO_INTRINSIC_RTH_GetValueInternal:
+        case CORINFO_INTRINSIC_RTH_GetValue:
             op1 = impStackTop(0).val;
             if (op1->gtOper == GT_CALL && (op1->AsCall()->gtCallType == CT_HELPER) &&
                 gtIsTypeHandleToRuntimeTypeHandleHelper(op1->AsCall()))

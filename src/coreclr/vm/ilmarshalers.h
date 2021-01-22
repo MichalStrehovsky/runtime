@@ -435,6 +435,18 @@ protected:
         }
     }
 
+    void EmitLoadNativeTypeHandle(ILCodeStream* pslILEmit, TypeHandle th)
+    {
+        WRAPPER_NO_CONTRACT;
+
+        DWORD dwTokenValueLocalNum = pslILEmit->NewLocal(CoreLibBinder::GetClass(CLASS__RT_TYPE_HANDLE));
+
+        pslILEmit->EmitLDTOKEN(pslILEmit->GetToken(th));
+        pslILEmit->EmitSTLOC(dwTokenValueLocalNum);
+        pslILEmit->EmitLDLOCA(dwTokenValueLocalNum);
+        pslILEmit->EmitCALL(METHOD__RT_TYPE_HANDLE__GET_VALUE, 1, 1);
+    }
+
 public:
 
     virtual bool SupportsArgumentMarshal(DWORD dwMarshalFlags, UINT* pErrorResID)

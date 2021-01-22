@@ -874,7 +874,7 @@ enum CorInfoIntrinsics
     CORINFO_INTRINSIC_StringLength,         // get the length
     CORINFO_INTRINSIC_InitializeArray,      // initialize an array from static data
     CORINFO_INTRINSIC_GetTypeFromHandle,
-    CORINFO_INTRINSIC_RTH_GetValueInternal,
+    CORINFO_INTRINSIC_RTH_GetValue,
     CORINFO_INTRINSIC_TypeEQ,
     CORINFO_INTRINSIC_TypeNEQ,
     CORINFO_INTRINSIC_Object_GetType,

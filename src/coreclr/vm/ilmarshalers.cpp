@@ -1342,8 +1342,7 @@ void ILInterfaceMarshaler::EmitConvertContentsCLRToNative(ILCodeStream* pslILEmi
 
     if (itfInfo.thNativeItf.GetMethodTable())
     {
-        pslILEmit->EmitLDTOKEN(pslILEmit->GetToken(itfInfo.thNativeItf.GetMethodTable()));
-        pslILEmit->EmitCALL(METHOD__RT_TYPE_HANDLE__GETVALUEINTERNAL, 1, 1);
+        EmitLoadNativeTypeHandle(pslILEmit, itfInfo.thNativeItf.GetMethodTable());
     }
     else
     {
@@ -1352,8 +1351,7 @@ void ILInterfaceMarshaler::EmitConvertContentsCLRToNative(ILCodeStream* pslILEmi
 
     if (itfInfo.thClass.GetMethodTable())
     {
-        pslILEmit->EmitLDTOKEN(pslILEmit->GetToken(itfInfo.thClass.GetMethodTable()));
-        pslILEmit->EmitCALL(METHOD__RT_TYPE_HANDLE__GETVALUEINTERNAL, 1, 1);
+        EmitLoadNativeTypeHandle(pslILEmit, itfInfo.thClass.GetMethodTable());
     }
     else
     {
@@ -1379,8 +1377,7 @@ void ILInterfaceMarshaler::EmitConvertContentsNativeToCLR(ILCodeStream* pslILEmi
 
     if (itfInfo.thItf.GetMethodTable())
     {
-        pslILEmit->EmitLDTOKEN(pslILEmit->GetToken(itfInfo.thItf.GetMethodTable()));
-        pslILEmit->EmitCALL(METHOD__RT_TYPE_HANDLE__GETVALUEINTERNAL, 1, 1);
+        EmitLoadNativeTypeHandle(pslILEmit, itfInfo.thItf.GetMethodTable());
     }
     else
     {
@@ -1389,8 +1386,7 @@ void ILInterfaceMarshaler::EmitConvertContentsNativeToCLR(ILCodeStream* pslILEmi
 
     if (itfInfo.thClass.GetMethodTable())
     {
-        pslILEmit->EmitLDTOKEN(pslILEmit->GetToken(itfInfo.thClass.GetMethodTable()));
-        pslILEmit->EmitCALL(METHOD__RT_TYPE_HANDLE__GETVALUEINTERNAL, 1, 1);
+        EmitLoadNativeTypeHandle(pslILEmit, itfInfo.thClass.GetMethodTable());
     }
     else
     {
@@ -2209,8 +2205,7 @@ void ILLayoutClassPtrMarshalerBase::EmitConvertSpaceNativeToCLR(ILCodeStream* ps
     EmitLoadNativeValue(pslILEmit);
     pslILEmit->EmitBRFALSE(pNullRefLabel);
 
-    pslILEmit->EmitLDTOKEN(pslILEmit->GetToken(m_pargs->m_pMT));
-    pslILEmit->EmitCALL(METHOD__RT_TYPE_HANDLE__GETVALUEINTERNAL, 1, 1);
+    EmitLoadNativeTypeHandle(pslILEmit, m_pargs->m_pMT);
     // static object AllocateInternal(IntPtr typeHandle);
     pslILEmit->EmitCALL(METHOD__STUBHELPERS__ALLOCATE_INTERNAL, 1, 1);
     EmitStoreManagedValue(pslILEmit);
@@ -3775,8 +3770,7 @@ void ILNativeArrayMarshaler::EmitCreateMngdMarshaler(ILCodeStream* pslILEmit)
 
     pslILEmit->EmitLDLOC(m_dwMngdMarshalerLocalNum);
 
-    pslILEmit->EmitLDTOKEN(pslILEmit->GetToken(mops.methodTable));
-    pslILEmit->EmitCALL(METHOD__RT_TYPE_HANDLE__GETVALUEINTERNAL, 1, 1);
+    EmitLoadNativeTypeHandle(pslILEmit, mops.methodTable);
 
     DWORD dwFlags = mops.elementType;
     dwFlags |= (((DWORD)mops.bestfitmapping)        << 16);
@@ -4392,8 +4386,7 @@ void ILFixedArrayMarshaler::EmitCreateMngdMarshaler(ILCodeStream* pslILEmit)
 
     pslILEmit->EmitLDLOC(m_dwMngdMarshalerLocalNum);
 
-    pslILEmit->EmitLDTOKEN(pslILEmit->GetToken(mops.methodTable));
-    pslILEmit->EmitCALL(METHOD__RT_TYPE_HANDLE__GETVALUEINTERNAL, 1, 1);
+    EmitLoadNativeTypeHandle(pslILEmit, mops.methodTable);
 
     DWORD dwFlags = mops.elementType;
     dwFlags |= (((DWORD)mops.bestfitmapping) << 16);
@@ -4636,8 +4629,7 @@ void ILSafeArrayMarshaler::EmitCreateMngdMarshaler(ILCodeStream* pslILEmit)
     dwFlags |= ((BYTE)!!m_pargs->m_pMarshalInfo->GetNoLowerBounds()) << 24;
 
     pslILEmit->EmitLDLOC(m_dwMngdMarshalerLocalNum);
-    pslILEmit->EmitLDTOKEN(pslILEmit->GetToken(mops.methodTable));
-    pslILEmit->EmitCALL(METHOD__RT_TYPE_HANDLE__GETVALUEINTERNAL, 1, 1);
+    EmitLoadNativeTypeHandle(pslILEmit, mops.methodTable);
     pslILEmit->EmitLDC(m_pargs->m_pMarshalInfo->GetArrayRank());
     pslILEmit->EmitLDC(dwFlags);
 
@@ -4923,8 +4915,7 @@ void ILReferenceCustomMarshaler::EmitCreateMngdMarshaler(ILCodeStream* pslILEmit
 
     pslILEmit->EmitLDC(m_pargs->rcm.m_paramToken);
 
-    pslILEmit->EmitLDTOKEN(pslILEmit->GetToken(TypeHandle::FromPtr(m_pargs->rcm.m_hndManagedType)));
-    pslILEmit->EmitCALL(METHOD__RT_TYPE_HANDLE__GETVALUEINTERNAL, 1, 1);
+    EmitLoadNativeTypeHandle(pslILEmit, TypeHandle::FromPtr(m_pargs->rcm.m_hndManagedType));
 
     pslILEmit->EmitCALL(METHOD__STUBHELPERS__CREATE_CUSTOM_MARSHALER_HELPER, 3, 1);  // arg to CreateMarshaler
 

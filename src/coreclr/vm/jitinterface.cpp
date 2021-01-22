@@ -8739,38 +8739,45 @@ CorInfoIntrinsics CEEInfo::getIntrinsicID(CORINFO_METHOD_HANDLE methodHnd,
     else
     {
         MethodTable * pMT = method->GetMethodTable();
-        if (pMT->GetModule()->IsSystem() && pMT->IsByRefLike())
+        if (pMT->GetModule()->IsSystem())
         {
-            if (pMT->HasSameTypeDefAs(g_pByReferenceClass))
+            if (pMT->IsByRefLike())
             {
-                // ByReference<T> has just two methods: constructor and Value property
-                if (method->IsCtor())
+                if (pMT->HasSameTypeDefAs(g_pByReferenceClass))
                 {
-                    result = CORINFO_INTRINSIC_ByReference_Ctor;
+                    // ByReference<T> has just two methods: constructor and Value property
+                    if (method->IsCtor())
+                    {
+                        result = CORINFO_INTRINSIC_ByReference_Ctor;
+                    }
+                    else
+                    {
+                        _ASSERTE(strcmp(method->GetName(), "get_Value") == 0);
+                        result = CORINFO_INTRINSIC_ByReference_Value;
+                    }
+                    if (pMustExpand != nullptr)
+                    {
+                        *pMustExpand = true;
+                    }
                 }
-                else
+                else if (pMT->HasSameTypeDefAs(CoreLibBinder::GetClass(CLASS__SPAN)))
                 {
-                    _ASSERTE(strcmp(method->GetName(), "get_Value") == 0);
-                    result = CORINFO_INTRINSIC_ByReference_Value;
+                    if (method->HasSameMethodDefAs(CoreLibBinder::GetMethod(METHOD__SPAN__GET_ITEM)))
+                    {
+                        result = CORINFO_INTRINSIC_Span_GetItem;
+                    }
                 }
-                if (pMustExpand != nullptr)
+                else if (pMT->HasSameTypeDefAs(CoreLibBinder::GetClass(CLASS__READONLY_SPAN)))
                 {
-                    *pMustExpand = true;
+                    if (method->HasSameMethodDefAs(CoreLibBinder::GetMethod(METHOD__READONLY_SPAN__GET_ITEM)))
+                    {
+                        result = CORINFO_INTRINSIC_ReadOnlySpan_GetItem;
+                    }
                 }
             }
-            else if (pMT->HasSameTypeDefAs(CoreLibBinder::GetClass(CLASS__SPAN)))
+            else if (method == CoreLibBinder::GetMethod(METHOD__RT_TYPE_HANDLE__GET_VALUE))
             {
-                if (method->HasSameMethodDefAs(CoreLibBinder::GetMethod(METHOD__SPAN__GET_ITEM)))
-                {
-                    result = CORINFO_INTRINSIC_Span_GetItem;
-                }
-            }
-            else if (pMT->HasSameTypeDefAs(CoreLibBinder::GetClass(CLASS__READONLY_SPAN)))
-            {
-                if (method->HasSameMethodDefAs(CoreLibBinder::GetMethod(METHOD__READONLY_SPAN__GET_ITEM)))
-                {
-                    result = CORINFO_INTRINSIC_ReadOnlySpan_GetItem;
-                }
+                result = CORINFO_INTRINSIC_RTH_GetValue;
             }
         }
     }

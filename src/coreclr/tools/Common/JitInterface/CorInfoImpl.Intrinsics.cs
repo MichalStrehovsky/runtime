@@ -85,7 +85,7 @@ namespace Internal.JitInterface
             table.Add(CorInfoIntrinsics.CORINFO_INTRINSIC_StringLength, "get_Length", "System", "String");
             table.Add(CorInfoIntrinsics.CORINFO_INTRINSIC_InitializeArray, "InitializeArray", "System.Runtime.CompilerServices", "RuntimeHelpers");
             table.Add(CorInfoIntrinsics.CORINFO_INTRINSIC_GetTypeFromHandle, "GetTypeFromHandle", "System", "Type");
-            table.Add(CorInfoIntrinsics.CORINFO_INTRINSIC_RTH_GetValueInternal, "GetValueInternal", "System", "RuntimeTypeHandle");
+            table.Add(CorInfoIntrinsics.CORINFO_INTRINSIC_RTH_GetValue, "get_Value", "System", "RuntimeTypeHandle");
             table.Add(CorInfoIntrinsics.CORINFO_INTRINSIC_TypeEQ, "op_Equality", "System", "Type");
             table.Add(CorInfoIntrinsics.CORINFO_INTRINSIC_TypeNEQ, "op_Inequality", "System", "Type");
             table.Add(CorInfoIntrinsics.CORINFO_INTRINSIC_Object_GetType, "GetType", "System", "Object");
@@ -174,7 +174,7 @@ namespace Internal.JitInterface
                     }
                     break;
 
-                case CorInfoIntrinsics.CORINFO_INTRINSIC_RTH_GetValueInternal:
+                case CorInfoIntrinsics.CORINFO_INTRINSIC_RTH_GetValue:
 #if !READYTORUN
                 case CorInfoIntrinsics.CORINFO_INTRINSIC_InitializeArray:
 #endif

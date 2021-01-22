@@ -255,17 +255,6 @@ FCIMPL1(ReflectClassBaseObject*, RuntimeTypeHandle::GetRuntimeType, Enregistered
 }
 FCIMPLEND
 
-FCIMPL1_V(EnregisteredTypeHandle, RuntimeTypeHandle::GetValueInternal, FCALLRuntimeTypeHandle RTH)
-{
-    FCALL_CONTRACT;
-
-    if (FCALL_RTH_TO_REFLECTCLASS(RTH) == NULL)
-        return 0;
-
-    return FCALL_RTH_TO_REFLECTCLASS(RTH) ->GetType().AsPtr();
-}
-FCIMPLEND
-
 FCIMPL2(FC_BOOL_RET, RuntimeTypeHandle::IsEquivalentTo, ReflectClassBaseObject *rtType1UNSAFE, ReflectClassBaseObject *rtType2UNSAFE)
 {
     FCALL_CONTRACT;

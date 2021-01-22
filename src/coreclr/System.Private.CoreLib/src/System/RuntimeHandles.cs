@@ -96,11 +96,14 @@ namespace System
             return handle.m_type == m_type;
         }
 
-        public IntPtr Value => m_type != null ? m_type.m_handle : IntPtr.Zero;
-
-        [Intrinsic]
-        [MethodImpl(MethodImplOptions.InternalCall)]
-        internal static extern IntPtr GetValueInternal(RuntimeTypeHandle handle);
+        public IntPtr Value
+        {
+            [Intrinsic]
+            get
+            {
+                return m_type != null ? m_type.m_handle : IntPtr.Zero;
+            }
+        }
 
         internal RuntimeTypeHandle(RuntimeType type)
         {
