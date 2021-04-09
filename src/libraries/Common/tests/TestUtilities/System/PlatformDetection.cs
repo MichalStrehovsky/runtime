@@ -220,16 +220,22 @@ namespace System
 
         private static bool GetStaticNonPublicBooleanPropertyValue(string typeName, string propertyName)
         {
+            Console.WriteLine("INSTR: Getting globalization mode type");
             Type globalizationMode = Type.GetType(typeName);
             if (globalizationMode != null)
             {
+                Console.WriteLine("INSTR: Got globalization mode type");
                 MethodInfo methodInfo = globalizationMode.GetProperty(propertyName, BindingFlags.NonPublic | BindingFlags.Static)?.GetMethod;
                 if (methodInfo != null)
                 {
-                    return (bool)methodInfo.Invoke(null, null);
+                    Console.WriteLine("INSTR: Got a methodinfo");
+                    var b = (bool)methodInfo.Invoke(null, null);
+                    Console.WriteLine("INSTR: return {0}", b);
+                    return b;
                 }
             }
 
+            Console.WriteLine("INSTR: FAIL");
             return false;
         }
 
@@ -246,17 +252,21 @@ namespace System
             int version = 0;
             try
             {
+                Console.WriteLine("INSTR: Getting ICU version");
                 Type interopGlobalization = Type.GetType("Interop+Globalization");
                 if (interopGlobalization != null)
                 {
+                    Console.WriteLine("INSTR: got globalization type");
                     MethodInfo methodInfo = interopGlobalization.GetMethod("GetICUVersion", BindingFlags.NonPublic | BindingFlags.Static);
                     if (methodInfo != null)
                     {
+                        Console.WriteLine("INSTR: got the method");
                         version = (int)methodInfo.Invoke(null, null);
+                        Console.WriteLine("INSTR: the version is {0}", version);
                     }
                 }
             }
-            catch { }
+            catch (Exception ex) { Console.WriteLine("INSTR: " + ex.ToString()); }
 
             return new Version(version >> 24,
                               (version >> 16) & 0xFF,
