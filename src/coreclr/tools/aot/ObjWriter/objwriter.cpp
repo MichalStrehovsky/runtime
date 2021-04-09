@@ -117,6 +117,10 @@ bool ObjectWriter::Init(llvm::StringRef ObjectFilePath, const char* tripleName) 
   ObjFileInfo.reset(new MCObjectFileInfo);
   OutContext.reset(
       new MCContext(AsmInfo.get(), RegisterInfo.get(), ObjFileInfo.get()));
+
+  if (TheTriple.getObjectFormat() == Triple::MachO)
+    OutContext->setDwarfVersion(3);
+
   ObjFileInfo->InitMCObjectFileInfo(TheTriple, false, CodeModel::Default,
                                     *OutContext);
 

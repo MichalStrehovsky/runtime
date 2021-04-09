@@ -74,6 +74,10 @@ The .NET Foundation licenses this file to you under the MIT license.
       <LinkerArg Include="-shared" Condition="'$(TargetOS)' != 'OSX' and '$(NativeLib)' == 'Shared'" />
       <LinkerArg Include="-Wl,-u,_CoreRT_StaticInitialization" Condition="'$(TargetOS)' == 'OSX' and '$(NativeLib)' == 'Shared'" />
       <LinkerArg Include="-Wl,--require-defined,CoreRT_StaticInitialization" Condition="'$(TargetOS)' != 'OSX' and '$(NativeLib)' == 'Shared'" />
+      <LinkerArg Include="-mmacosx_version_min 10.13" Condition="'$(TargetOS)' == 'OSX'" />
+
+      <!-- We're getting warnings that our unwind info cannot be converted to the compact form -->
+      <LinkerArg Include="-no_compact_unwind" Condition="'$(TargetOS)' == 'OSX'" />
 
       <LinkerArg Include="@(NativeFramework->'-framework %(Identity)')" Condition="'$(TargetOS)' == 'OSX'" />
     </ItemGroup>
