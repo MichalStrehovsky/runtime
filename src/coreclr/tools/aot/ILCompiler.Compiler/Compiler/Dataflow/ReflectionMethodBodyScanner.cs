@@ -48,14 +48,22 @@ namespace ILCompiler.Dataflow
             return flowAnnotations.RequiresDataflowAnalysis(fieldDefinition);
         }
 
+        private bool ShouldEnablePatternReporting(MethodDesc method, string attributeName)
+        {
+            if (method.HasCustomAttribute("System.Diagnostics.CodeAnalysis", attributeName))
+                return false;
+
+
+        }
+
         bool ShouldEnableReflectionPatternReporting(MethodDesc method)
         {
-            return !method.HasCustomAttribute("System.Diagnostics.CodeAnalysis", "RequiresUnreferencedCodeAttribute");
+            return ShouldEnablePatternReporting(method, "RequiresUnreferencedCodeAttribute");
         }
 
         bool ShouldEnableAotPatternReporting(MethodDesc method)
         {
-            return !method.HasCustomAttribute("System.Diagnostics.CodeAnalysis", "RequiresDynamicCodeAttribute");
+            return ShouldEnablePatternReporting(method, "RequiresDynamicCodeAttribute");
         }
 
         private ReflectionMethodBodyScanner(NodeFactory factory, FlowAnnotations flowAnnotations, Logger logger)

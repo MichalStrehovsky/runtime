@@ -4,6 +4,9 @@
 
 using System;
 using System.Diagnostics;
+
+using ILCompiler.Logging;
+
 using Internal.IL;
 using Internal.TypeSystem;
 
@@ -28,19 +31,20 @@ namespace ILCompiler.Dataflow
         bool _patternReported;
 #endif
 
-        public TypeSystemEntity Source { get; private set; }
-        public Origin MemberWithRequirements { get; private set; }
-        public bool ReportingEnabled { get; private set; }
+        public MessageOrigin Origin { get; }
+        public TypeSystemEntity Source => Origin.MemberDefinition;
+        public Origin MemberWithRequirements { get; }
+        public bool ReportingEnabled { get; }
 
         public ReflectionPatternContext(
             Logger logger,
             bool reportingEnabled,
-            TypeSystemEntity source,
+            in MessageOrigin origin,
             Origin memberWithRequirements)
         {
             _logger = logger;
             ReportingEnabled = reportingEnabled;
-            Source = source;
+            Origin = origin;
             MemberWithRequirements = memberWithRequirements;
             _ilOffset = 0;
             _sourceIL = null;
@@ -54,10 +58,11 @@ namespace ILCompiler.Dataflow
         public ReflectionPatternContext(
             Logger logger,
             bool reportingEnabled,
+            MessageOrigin origin,
             MethodIL source,
             int offset,
             Origin memberWithRequirements)
-            : this(logger, reportingEnabled, source.OwningMethod, memberWithRequirements)
+            : this(logger, reportingEnabled, origin, memberWithRequirements)
         {
             _sourceIL = source;
             _ilOffset = offset;

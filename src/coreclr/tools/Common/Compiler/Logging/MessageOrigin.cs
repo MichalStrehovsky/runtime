@@ -16,6 +16,9 @@ namespace ILCompiler.Logging
         public string FileName { get; }
         public TypeSystemEntity MemberDefinition { get; }
 
+        readonly TypeSystemEntity _suppressionContextMember;
+        public TypeSystemEntity SuppressionContextMember { get => _suppressionContextMember ?? MemberDefinition; }
+
         public int? SourceLine { get; }
         public int? SourceColumn { get; }
 
@@ -25,14 +28,16 @@ namespace ILCompiler.Logging
             SourceLine = sourceLine;
             SourceColumn = sourceColumn;
             MemberDefinition = null;
+            _suppressionContextMember = null;
         }
 
-        public MessageOrigin(TypeSystemEntity memberDefinition, string fileName = null, int? sourceLine = 0, int? sourceColumn = 0)
+        public MessageOrigin(TypeSystemEntity memberDefinition, string fileName = null, int? sourceLine = 0, int? sourceColumn = 0, TypeSystemEntity suppressionContextMember = null)
         {
             FileName = fileName;
             MemberDefinition = memberDefinition;
             SourceLine = sourceLine;
             SourceColumn = sourceColumn;
+            _suppressionContextMember = suppressionContextMember;
         }
 
         public override string ToString()
@@ -55,7 +60,7 @@ namespace ILCompiler.Logging
 
 #if false
         public bool Equals(MessageOrigin other) =>
-            (FileName, MemberDefinition, SourceLine, SourceColumn) == (other.FileName, other.MemberDefinition, other.SourceLine, other.SourceColumn);
+            (FileName, MemberDefinition, SourceLine, SourceColumn, ILOffset) == (other.FileName, other.MemberDefinition, other.SourceLine, other.SourceColumn, other.ILOffset);
 
         public override bool Equals(object obj) => obj is MessageOrigin messageOrigin && Equals(messageOrigin);
         public override int GetHashCode() => (FileName, MemberDefinition, SourceLine, SourceColumn).GetHashCode();
@@ -66,8 +71,15 @@ namespace ILCompiler.Logging
         {
             if (MemberDefinition != null && other.MemberDefinition != null)
             {
-                return (MemberDefinition.DeclaringType?.Module?.Assembly?.Name?.Name, MemberDefinition.DeclaringType?.Name, MemberDefinition?.Name).CompareTo
-                    ((other.MemberDefinition.DeclaringType?.Module?.Assembly?.Name?.Name, other.MemberDefinition.DeclaringType?.Name, other.MemberDefinition?.Name));
+                TypeDefinition thisTypeDef = (MemberDefinition as TypeDefinition) ?? MemberDefinition.DeclaringType;
+				TypeDefinition otherTypeDef = (other.MemberDefinition as TypeDefinition) ?? other.MemberDefinition.DeclaringType;
+				int result = (thisTypeDef?.Module?.Assembly?.Name?.Name, thisTypeDef?.Name, MemberDefinition?.Name).CompareTo
+					((otherTypeDef?.Module?.Assembly?.Name?.Name, otherTypeDef?.Name, other.MemberDefinition?.Name));
+				if (result != 0)
+					return result;
+				if (ILOffset != null && other.ILOffset != null)
+					return ILOffset.Value.CompareTo (other.ILOffset);
+				return ILOffset == null ? (other.ILOffset == null ? 0 : 1) : -1;
             }
             else if (MemberDefinition == null && other.MemberDefinition == null)
             {
