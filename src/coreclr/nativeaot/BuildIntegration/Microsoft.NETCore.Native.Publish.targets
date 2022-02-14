@@ -90,9 +90,16 @@
   </Target>
 
   <Target Name="CopyNativeBinary" AfterTargets="Publish">
+    <PropertyGroup Condition="'$(IsAndroid)' == 'true'">
+      <NdkLibFolder Condition="'$(CrossCompileArch)' == 'arm'">$(CrossCompileArch)-linux-androideabi</NdkLibFolder>
+      <NdkLibFolder Condition="'$(CrossCompileArch)' == 'x86'">i686-linux-android</NdkLibFolder>
+      <NdkLibFolder Condition="'$(CrossCompileArch)' != 'arm' and '$(CrossCompileArch)' != 'x86'">$(CrossCompileArch)-linux-android</NdkLibFolder>
+    </PropertyGroup>
     <!-- override apphost with binary we generated during native compilation -->
     <Delete Files="$(PublishDir)\$(TargetName)$(NativeBinaryExt)" />
     <Copy SourceFiles="$(NativeOutputPath)$(TargetName)$(NativeBinaryExt)" DestinationFolder="$(PublishDir)" />
+    <!--copy libc++_shared.so from NDK sysroot to publish directory-->
+    <Copy SourceFiles="$(SysRoot)/usr/lib/$(NdkLibFolder)/libc++_shared.so" DestinationFolder="$(PublishDir)" Condition="'$(IsAndroid)' == 'true'"/>
   </Target>
 
   <Target Name="CopyNativePdb" Condition="'$(DebugType)' != 'None' and '$(TargetOS)' == 'windows' and '$(NativeLib)' != 'Static'" AfterTargets="Publish">
