@@ -26,6 +26,10 @@ namespace ILCompiler.DependencyAnalysis
         {
             DependencyList dependencyList = base.ComputeNonRelocationBasedDependencies(factory);
 
+            TypeDesc canonType = _type.ConvertToCanonForm(CanonicalFormKind.Specific);
+            if (_type != canonType)
+                dependencyList.Add(factory.ConstructedCanonicallyEquivalentType(canonType), "Specialized form of canonical form was constructed");
+
             // Ensure that we track the necessary type symbol if we are working with a constructed type symbol.
             // The emitter will ensure we don't emit both, but this allows us assert that we only generate
             // relocs to nodes we emit.
@@ -38,7 +42,6 @@ namespace ILCompiler.DependencyAnalysis
 
             if (MightHaveInterfaceDispatchMap(factory))
             {
-                TypeDesc canonType = _type.ConvertToCanonForm(CanonicalFormKind.Specific);
                 dependencyList.Add(factory.InterfaceDispatchMap(canonType), "Interface dispatch map");
             }
 

@@ -46,13 +46,23 @@ namespace ILCompiler.DependencyAnalysis
                 owningType = owningType.Instantiation[0].MakeArrayType();
             }
 
+            object owningTypeNode;
+            if (owningType.IsCanonicalSubtype(CanonicalFormKind.Any))
+            {
+                owningTypeNode = factory.ConstructedCanonicallyEquivalentType(owningType);
+            }
+            else
+            {
+                owningTypeNode = factory.ConstructedTypeSymbol(owningType);
+            }
+
             // If a constructed symbol for the owning type was included in the compilation,
             // include the real method body.
             return new CombinedDependencyListEntry[]
             {
                 new CombinedDependencyListEntry(
                     RealBody,
-                    factory.ConstructedTypeSymbol(owningType),
+                    owningTypeNode,
                     "Instance method on a constructed type"),
             };
         }

@@ -593,6 +593,10 @@ namespace ILCompiler
                         TypeDesc type = eetypeNode.Type;
                         _constructedTypes.Add(type);
                     }
+                    if (node is ConstructedCanonicallyEquivalentTypeNode canonTypeNode)
+                    {
+                        _constructedTypes.Add(canonTypeNode.Type);
+                    }
                 }
             }
 

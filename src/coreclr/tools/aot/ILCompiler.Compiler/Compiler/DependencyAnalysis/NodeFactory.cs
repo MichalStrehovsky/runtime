@@ -175,6 +175,11 @@ namespace ILCompiler.DependencyAnalysis
                 return new ClonedConstructedEETypeNode(this, type);
             });
 
+            _constructedCanonicallyEquivalentTypes = new NodeCache<TypeDesc, ConstructedCanonicallyEquivalentTypeNode>(type =>
+            {
+                return new ConstructedCanonicallyEquivalentTypeNode(type);
+            });
+
             _importedTypeSymbols = new NodeCache<TypeDesc, IEETypeNode>((TypeDesc type) =>
             {
                 Debug.Assert(_compilationModuleGroup.ShouldReferenceThroughImportTable(type));
@@ -596,6 +601,12 @@ namespace ILCompiler.DependencyAnalysis
         {
             Debug.Assert(!TypeCannotHaveEEType(type));
             return _clonedTypeSymbols.GetOrAdd(type);
+        }
+
+        private NodeCache<TypeDesc, ConstructedCanonicallyEquivalentTypeNode> _constructedCanonicallyEquivalentTypes;
+        public IDependencyNode<NodeFactory> ConstructedCanonicallyEquivalentType(TypeDesc type)
+        {
+            return _constructedCanonicallyEquivalentTypes.GetOrAdd(type);
         }
 
         private NodeCache<TypeDesc, IEETypeNode> _importedTypeSymbols;
