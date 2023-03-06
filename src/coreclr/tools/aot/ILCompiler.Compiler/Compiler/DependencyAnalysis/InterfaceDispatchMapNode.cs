@@ -155,12 +155,17 @@ namespace ILCompiler.DependencyAnalysis
             var staticImplementations = new List<(int InterfaceIndex, int InterfaceMethodSlot, int ImplMethodSlot, int Context)>();
             var staticDefaultImplementations = new List<(int InterfaceIndex, int InterfaceMethodSlot, int ImplMethodSlot, int Context)>();
 
+            int entryIndex = 0;
+
             // Resolve all the interfaces, but only emit non-static and non-default implementations
             for (int interfaceIndex = 0; interfaceIndex < declTypeRuntimeInterfaces.Length; interfaceIndex++)
             {
-                var interfaceType = declTypeRuntimeInterfaces[interfaceIndex];
+                var interfaceType = declTypeRuntimeInterfaces[interfaceIndex].NormalizeInstantiation();
                 var interfaceDefinitionType = declTypeDefinitionRuntimeInterfaces[interfaceIndex];
                 Debug.Assert(interfaceType.IsInterface);
+
+                if (!factory.ConstructedTypeSymbol(interfaceType).Marked)
+                    continue;
 
                 IReadOnlyList<MethodDesc> virtualSlots = factory.VTable(interfaceType).Slots;
 
@@ -197,11 +202,11 @@ namespace ILCompiler.DependencyAnalysis
                             int genericContext = targetMethod.GetCanonMethodTarget(CanonicalFormKind.Specific).RequiresInstArg()
                                 ? StaticVirtualMethodContextSource.ContextFromThisClass
                                 : StaticVirtualMethodContextSource.None;
-                            staticImplementations.Add((interfaceIndex, emittedInterfaceSlot, emittedImplSlot, genericContext));
+                            staticImplementations.Add((entryIndex, emittedInterfaceSlot, emittedImplSlot, genericContext));
                         }
                         else
                         {
-                            builder.EmitShort((short)checked((ushort)interfaceIndex));
+                            builder.EmitShort((short)checked((ushort)entryIndex));
                             builder.EmitShort((short)checked((ushort)emittedInterfaceSlot));
                             builder.EmitShort((short)checked((ushort)emittedImplSlot));
                             entryCount++;
@@ -250,7 +255,7 @@ namespace ILCompiler.DependencyAnalysis
                                     genericContext = StaticVirtualMethodContextSource.ContextFromFirstInterface + indexOfInterface;
                                 }
                                 staticDefaultImplementations.Add((
-                                    interfaceIndex,
+                                    entryIndex,
                                     emittedInterfaceSlot,
                                     implSlot.Value,
                                     genericContext));
@@ -258,13 +263,15 @@ namespace ILCompiler.DependencyAnalysis
                             else
                             {
                                 defaultImplementations.Add((
-                                    interfaceIndex,
+                                    entryIndex,
                                     emittedInterfaceSlot,
                                     implSlot.Value));
                             }
                         }
                     }
                 }
+
+                entryIndex++;
             }
 
             // Now emit the default implementations

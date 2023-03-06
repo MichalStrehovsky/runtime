@@ -84,6 +84,7 @@ namespace ILCompiler
             }
             else
             {
+                // TODO
                 interfaceIndex = Array.IndexOf(implementingClass.GetTypeDefinition().RuntimeInterfaces, interfaceOnDefinition);
                 Debug.Assert(interfaceIndex >= 0);
             }

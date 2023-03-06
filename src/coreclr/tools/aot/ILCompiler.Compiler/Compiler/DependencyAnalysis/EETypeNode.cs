@@ -641,7 +641,7 @@ namespace ILCompiler.DependencyAnalysis
 
                 // Emit interface map
                 SlotCounter interfaceSlotCounter = SlotCounter.BeginCounting(ref /* readonly */ objData);
-                OutputInterfaceMap(factory, ref objData);
+                OutputInterfaceMap(factory, ref objData, relocsOnly);
 
                 // Update slot count
                 int numberOfInterfaceSlots = interfaceSlotCounter.CountSlots(ref /* readonly */ objData);
@@ -997,13 +997,20 @@ namespace ILCompiler.DependencyAnalysis
             return factory.NecessaryTypeSymbol(interfaceType);
         }
 
-        protected virtual void OutputInterfaceMap(NodeFactory factory, ref ObjectDataBuilder objData)
+        protected virtual void OutputInterfaceMap(NodeFactory factory, ref ObjectDataBuilder objData, bool relocsOnly)
         {
             Debug.Assert(EmitVirtualSlotsAndInterfaces);
 
+            if (relocsOnly)
+                return;
+
             foreach (var itf in _type.RuntimeInterfaces)
             {
-                objData.EmitPointerRelocOrIndirectionReference(GetInterfaceTypeNode(factory, itf));
+                IEETypeNode interfaceTypeNode = GetInterfaceTypeNode(factory, itf);
+                if (interfaceTypeNode.Marked)
+                {
+                    objData.EmitPointerRelocOrIndirectionReference(interfaceTypeNode);
+                }
             }
         }
 
