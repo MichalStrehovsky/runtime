@@ -64,7 +64,7 @@ namespace ILCompiler.DependencyAnalysis
     /// <summary>
     /// Represents a VTable slice with fixed slots whose assignment was determined at the time the slice was allocated.
     /// </summary>
-    internal class PrecomputedVTableSliceNode : VTableSliceNode
+    public class PrecomputedVTableSliceNode : VTableSliceNode
     {
         private readonly IReadOnlyList<MethodDesc> _slots;
 
@@ -95,7 +95,7 @@ namespace ILCompiler.DependencyAnalysis
     /// Represents a VTable slice for a complete type - a type with all virtual method slots generated,
     /// irrespective of whether they are used.
     /// </summary>
-    internal sealed class EagerlyBuiltVTableSliceNode : PrecomputedVTableSliceNode
+    public sealed class EagerlyBuiltVTableSliceNode : PrecomputedVTableSliceNode
     {
         public EagerlyBuiltVTableSliceNode(TypeDesc type)
             : base(type, ComputeSlots(type))
@@ -137,7 +137,7 @@ namespace ILCompiler.DependencyAnalysis
     /// Represents a VTable slice where slots are built on demand. Only the slots that are actually used
     /// will be generated.
     /// </summary>
-    internal sealed class LazilyBuiltVTableSliceNode : VTableSliceNode
+    public sealed class LazilyBuiltVTableSliceNode : VTableSliceNode
     {
         private HashSet<MethodDesc> _usedMethods = new HashSet<MethodDesc>();
         private MethodDesc[] _slots;

@@ -25,6 +25,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\ILCompiler.Compiler\Compiler\DependencyAnalysis\ILScanNodeFactory.cs" Link="Compiler\ILScanNodeFactory.cs" />
+    <Compile Include="..\ILCompiler.Compiler\Compiler\ILScanner.cs" Link="Compiler\ILScanner.cs" />
+    <Compile Include="..\ILCompiler.Compiler\Compiler\ILScannerBuilder.cs" Link="Compiler\ILScannerBuilder.cs" />
     <Compile Include="Compiler\DependencyAnalysis\MethodCodeNode.cs" />
     <Compile Include="Compiler\DependencyAnalysis\RyuJitNodeFactory.cs" />
     <Compile Include="Compiler\ProfileDataManager.cs" />

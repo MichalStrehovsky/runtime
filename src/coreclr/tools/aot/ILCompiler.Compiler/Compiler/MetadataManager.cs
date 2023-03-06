@@ -705,12 +705,12 @@ namespace ILCompiler
             return _genericDictionariesGenerated;
         }
 
-        internal IEnumerable<DefType> GetTypesWithStructMarshalling()
+        public IEnumerable<DefType> GetTypesWithStructMarshalling()
         {
             return _typesWithStructMarshalling;
         }
 
-        internal IEnumerable<DefType> GetTypesWithDelegateMarshalling()
+        public IEnumerable<DefType> GetTypesWithDelegateMarshalling()
         {
             return _typesWithDelegateMarshalling;
         }

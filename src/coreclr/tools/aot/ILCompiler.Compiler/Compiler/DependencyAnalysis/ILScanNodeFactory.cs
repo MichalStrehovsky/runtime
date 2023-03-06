@@ -32,7 +32,7 @@ namespace ILCompiler.DependencyAnalysis
                 }
                 else if (method.IsArrayAddressMethod())
                 {
-                    return new ScannedMethodNode(((ArrayType)method.OwningType).GetArrayMethod(ArrayMethodKind.AddressWithHiddenArg));
+                    return new MethodCodeNode(((ArrayType)method.OwningType).GetArrayMethod(ArrayMethodKind.AddressWithHiddenArg));
                 }
                 else if (method.HasCustomAttribute("System.Runtime", "RuntimeImportAttribute"))
                 {
@@ -42,7 +42,7 @@ namespace ILCompiler.DependencyAnalysis
 
             if (CompilationModuleGroup.ContainsMethodBody(method, false))
             {
-                return new ScannedMethodNode(method);
+                return new MethodCodeNode(method);
             }
             else
             {
@@ -60,7 +60,7 @@ namespace ILCompiler.DependencyAnalysis
                 // 'this' and also provides an instantiation argument (we do a calling convention conversion).
                 // We don't do this for generic instance methods though because they don't use the MethodTable
                 // for the generic context anyway.
-                return new ScannedMethodNode(TypeSystemContext.GetSpecialUnboxingThunk(method, TypeSystemContext.GeneratedAssembly));
+                return new MethodCodeNode(TypeSystemContext.GetSpecialUnboxingThunk(method, TypeSystemContext.GeneratedAssembly));
             }
             else
             {

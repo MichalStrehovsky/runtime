@@ -216,9 +216,6 @@
     <Compile Include="..\..\Common\TypeSystem\IL\NativeAotILProvider.cs">
       <Link>IL\NativeAotILProvider.cs</Link>
     </Compile>
-    <Compile Include="..\..\Common\TypeSystem\IL\ILImporter.cs">
-      <Link>IL\ILImporter.cs</Link>
-    </Compile>
     <Compile Include="..\..\Common\TypeSystem\IL\ILReader.cs">
       <Link>IL\ILReader.cs</Link>
     </Compile>
@@ -418,7 +415,6 @@
     <Compile Include="Compiler\DependencyAnalysis\VariantInterfaceMethodUseNode.cs" />
     <Compile Include="Compiler\DependencyAnalysis\CustomAttributeBasedDependencyAlgorithm.cs" />
     <Compile Include="Compiler\DependencyAnalysis\FieldMetadataNode.cs" />
-    <Compile Include="Compiler\DependencyAnalysis\ILScanNodeFactory.cs" />
     <Compile Include="Compiler\DictionaryLayoutProvider.cs" />
     <Compile Include="Compiler\DirectPInvokePolicy.cs" />
     <Compile Include="Compiler\Disassembler.cs" />
@@ -453,8 +449,6 @@
     <Compile Include="Compiler\DependencyAnalysis\TypeMetadataNode.cs" />
     <Compile Include="Compiler\DependencyAnalysis\ScannedMethodNode.cs" />
     <Compile Include="Compiler\DependencyAnalysis\ShadowConcreteUnboxingThunkNode.cs" />
-    <Compile Include="Compiler\ILScanner.cs" />
-    <Compile Include="Compiler\ILScannerBuilder.cs" />
     <Compile Include="Compiler\ILStreamReader.cs" />
     <Compile Include="Compiler\LibraryInitializers.cs" />
     <Compile Include="Compiler\Compilation.cs" />
@@ -613,7 +607,6 @@
     <Compile Include="Compiler\Logging\SuppressMessageInfo.cs" />
     <Compile Include="Compiler\Logging\UnconditionalSuppressMessageAttributeState.cs" />
     <Compile Include="Compiler\XmlObjectDumper.cs" />
-    <Compile Include="IL\ILImporter.Scanner.cs" />
     <Compile Include="IL\Stubs\PInvokeILProvider.cs" />
     <Compile Include="IL\Stubs\StartupCode\AppContextInitializerMethod.cs" />
     <Compile Include="IL\Stubs\StartupCode\AppContextInitializerMethod.Sorting.cs" />

@@ -654,7 +654,7 @@ namespace ILCompiler
             }
         }
 
-        internal CompilationResults(DependencyAnalyzerBase<NodeFactory> graph, NodeFactory factory)
+        protected internal CompilationResults(DependencyAnalyzerBase<NodeFactory> graph, NodeFactory factory)
         {
             _graph = graph;
             _factory = factory;

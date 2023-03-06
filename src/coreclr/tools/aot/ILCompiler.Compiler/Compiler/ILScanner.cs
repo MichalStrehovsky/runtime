@@ -1,19 +1,15 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Threading.Tasks;
 
 using ILCompiler.DependencyAnalysis;
 using ILCompiler.DependencyAnalysisFramework;
 
 using Internal.IL;
-using Internal.IL.Stubs;
 using Internal.JitInterface;
 using Internal.TypeSystem;
-using Internal.ReadyToRunConstants;
 
 using Debug = System.Diagnostics.Debug;
 
@@ -24,8 +20,35 @@ namespace ILCompiler
     /// will need to be generated during a compilation. The result of analysis is a conservative superset of
     /// what methods will be compiled by the actual codegen backend.
     /// </summary>
-    internal sealed class ILScanner : Compilation, IILScanner
+    internal sealed class ILScanner : RyuJitCompilation, IILScanner
     {
+        internal ILScanner(
+            DependencyAnalyzerBase<NodeFactory> dependencyGraph,
+            NodeFactory nodeFactory,
+            IEnumerable<ICompilationRootProvider> roots,
+            ILProvider ilProvider,
+            DebugInformationProvider debugInformationProvider,
+            Logger logger,
+            DevirtualizationManager devirtualizationManager,
+            IInliningPolicy inliningPolicy,
+            InstructionSetSupport instructionSetSupport,
+            ProfileDataManager profileDataManager,
+            MethodImportationErrorProvider errorProvider,
+            RyuJitCompilationOptions options,
+            int parallelism)
+            : base(dependencyGraph, nodeFactory, roots, ilProvider, debugInformationProvider, logger, devirtualizationManager,
+                  inliningPolicy, instructionSetSupport, profileDataManager, errorProvider, options, parallelism)
+        {
+        }
+
+        public ILScanResults Scan()
+        {
+            _dependencyGraph.ComputeMarkedNodes();
+            _nodeFactory.SetMarkingComplete();
+            return new ILScanResults(_dependencyGraph, _nodeFactory);
+        }
+
+#if false
         private readonly int _parallelism;
 
         internal ILScanner(
@@ -193,6 +216,7 @@ namespace ILCompiler
             }
 
         }
+#endif
     }
 
     public interface IILScanner
@@ -268,7 +292,7 @@ namespace ILCompiler
                 }
             }
 
-            internal override VTableSliceNode GetSlice(TypeDesc type)
+            protected override VTableSliceNode GetSlice(TypeDesc type)
             {
                 // TODO: move ownership of compiler-generated entities to CompilerTypeSystemContext.
                 // https://github.com/dotnet/corert/issues/3873
@@ -283,9 +307,10 @@ namespace ILCompiler
                         // On the path, you'll find a node that exists in both graphs, but it's predecessor
                         // only exists in the compiler's graph. That's the place to focus the investigation on.
                         // Use the ILCompiler-DependencyGraph-Viewer tool to investigate.
-                        Debug.Assert(false);
-                        string typeName = ExceptionTypeNameFormatter.Instance.FormatName(type);
-                        throw new ScannerFailedException($"VTable of type '{typeName}' not computed by the IL scanner.");
+                        return new LazilyBuiltVTableSliceNode(type);
+                        //Debug.Assert(false);
+                        //string typeName = ExceptionTypeNameFormatter.Instance.FormatName(type);
+                        //throw new ScannerFailedException($"VTable of type '{typeName}' not computed by the IL scanner.");
                     }
                     return new PrecomputedVTableSliceNode(type, slots);
                 }

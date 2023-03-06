@@ -75,6 +75,11 @@ namespace ILCompiler
             return _ilProvider;
         }
 
+        public ILScannerBuilder GetILScannerBuilder(CompilationModuleGroup compilationGroup = null)
+        {
+            return new ILScannerBuilder(_context, compilationGroup ?? _compilationGroup, _nameMangler, GetILProvider(), GetPreinitializationManager());
+        }
+
         public override ICompilation ToCompilation()
         {
             ArrayBuilder<CorJitFlag> jitFlagBuilder = default(ArrayBuilder<CorJitFlag>);
@@ -125,7 +130,7 @@ namespace ILCompiler
 
             var factory = new RyuJitNodeFactory(_context, _compilationGroup, _metadataManager, _interopStubManager, _nameMangler, _vtableSliceProvider, _dictionaryLayoutProvider, GetPreinitializationManager());
 
-            JitConfigProvider.Initialize(_context.Target, jitFlagBuilder.ToArray(), _ryujitOptions, _jitPath);
+            //JitConfigProvider.Initialize(_context.Target, jitFlagBuilder.ToArray(), _ryujitOptions, _jitPath);
             DependencyAnalyzerBase<NodeFactory> graph = CreateDependencyGraph(factory, new ObjectNode.ObjectNodeComparer(CompilerComparer.Instance));
             return new RyuJitCompilation(graph, factory, _compilationRoots, _ilProvider, _debugInformationProvider, _logger, _devirtualizationManager, _inliningPolicy ?? _compilationGroup, _instructionSetSupport, _profileDataManager, _methodImportationErrorProvider, options, _parallelism);
         }

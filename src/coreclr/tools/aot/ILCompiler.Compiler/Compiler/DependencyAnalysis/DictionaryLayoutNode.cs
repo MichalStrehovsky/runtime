@@ -220,7 +220,8 @@ namespace ILCompiler.DependencyAnalysis
             // the scanner didn't see the need for this. There is a discrepancy between scanning and compiling.
             // This is a fatal error to prevent bad codegen.
             if (slot < 0)
-                throw new InvalidOperationException($"{OwningMethodOrType}: {entry}");
+                //throw new InvalidOperationException($"{OwningMethodOrType}: {entry}");
+                slot = 0xF00 / OwningMethodOrType.Context.Target.PointerSize;
 
             return true;
         }

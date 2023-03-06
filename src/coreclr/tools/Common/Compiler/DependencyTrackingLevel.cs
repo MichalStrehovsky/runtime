@@ -30,7 +30,7 @@ namespace ILCompiler
         All
     }
 
-    internal static class DependencyTrackingLevelExtensions
+    public static class DependencyTrackingLevelExtensions
     {
         public static DependencyAnalyzerBase<NodeFactory> CreateDependencyGraph(this DependencyTrackingLevel trackingLevel, NodeFactory factory, IComparer<DependencyNodeCore<NodeFactory>> comparer = null)
         {

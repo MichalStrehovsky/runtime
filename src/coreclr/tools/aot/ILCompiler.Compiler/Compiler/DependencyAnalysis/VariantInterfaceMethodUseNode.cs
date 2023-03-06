@@ -19,7 +19,7 @@ namespace ILCompiler.DependencyAnalysis
     // There's a potential optimization opportunity because e.g. the fact that
     // IEnumerable<string>.GetEnumerator() is used doesn't mean that
     // IEnumerable<char>.GetEnumerator() is used, but this complicates the tracking.
-    internal sealed class VariantInterfaceMethodUseNode : DependencyNodeCore<NodeFactory>
+    public sealed class VariantInterfaceMethodUseNode : DependencyNodeCore<NodeFactory>
     {
         private readonly MethodDesc _decl;
 

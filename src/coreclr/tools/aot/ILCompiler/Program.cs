@@ -422,6 +422,7 @@ namespace ILCompiler
             void RunScanner()
             {
                 ILScannerBuilder scannerBuilder = builder.GetILScannerBuilder()
+                    .UseInstructionSetSupport(instructionSetSupport)
                     .UseCompilationRoots(compilationRoots)
                     .UseMetadataManager(metadataManager)
                     .UseParallelism(parallelism)

@@ -18,7 +18,7 @@ using Internal.JitInterface;
 
 namespace ILCompiler
 {
-    public sealed class RyuJitCompilation : Compilation
+    public class RyuJitCompilation : Compilation
     {
         private readonly ConditionalWeakTable<Thread, CorInfoImpl> _corinfos = new ConditionalWeakTable<Thread, CorInfoImpl>();
         internal readonly RyuJitCompilationOptions _compilationOptions;
@@ -75,10 +75,10 @@ namespace ILCompiler
             // information proving that it isn't, give RyuJIT the constructed symbol even
             // though we just need the unconstructed one.
             // https://github.com/dotnet/runtimelab/issues/1128
-            bool canPotentiallyConstruct = _devirtualizationManager == null
-                ? true : _devirtualizationManager.CanConstructType(type);
-            if (canPotentiallyConstruct)
-                return _nodeFactory.MaximallyConstructableType(type);
+            //bool canPotentiallyConstruct = _devirtualizationManager == null
+            //    ? true : _devirtualizationManager.CanConstructType(type);
+            //if (canPotentiallyConstruct)
+            //    return _nodeFactory.MaximallyConstructableType(type);
 
             return _nodeFactory.NecessaryTypeSymbol(type);
         }

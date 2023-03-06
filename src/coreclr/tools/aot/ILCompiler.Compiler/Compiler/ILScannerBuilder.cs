@@ -6,7 +6,9 @@ using System.Collections.Generic;
 
 using ILCompiler.DependencyAnalysis;
 using ILCompiler.DependencyAnalysisFramework;
+
 using Internal.IL;
+using Internal.JitInterface;
 
 namespace ILCompiler
 {
@@ -25,6 +27,7 @@ namespace ILCompiler
         private IEnumerable<ICompilationRootProvider> _compilationRoots = Array.Empty<ICompilationRootProvider>();
         private MetadataManager _metadataManager;
         private InteropStubManager _interopStubManager = new EmptyInteropStubManager();
+        private InstructionSetSupport _instrSetSupport;
         private int _parallelism = -1;
 
         internal ILScannerBuilder(CompilerTypeSystemContext context, CompilationModuleGroup compilationGroup, NameMangler mangler, ILProvider ilProvider, PreinitializationManager preinitializationManager)
@@ -73,12 +76,23 @@ namespace ILCompiler
             return this;
         }
 
+        public ILScannerBuilder UseInstructionSetSupport(InstructionSetSupport support)
+        {
+            _instrSetSupport = support;
+            return this;
+        }
+
         public IILScanner ToILScanner()
         {
+            ArrayBuilder<CorJitFlag> jitFlagBuilder = default(ArrayBuilder<CorJitFlag>);
+            jitFlagBuilder.Add(CorJitFlag.CORJIT_FLAG_DEBUG_INFO);
+            JitConfigProvider.Initialize(_context.Target, jitFlagBuilder.ToArray(), Array.Empty<KeyValuePair<string, string>>());
+
             var nodeFactory = new ILScanNodeFactory(_context, _compilationGroup, _metadataManager, _interopStubManager, _nameMangler, _preinitializationManager);
             DependencyAnalyzerBase<NodeFactory> graph = _dependencyTrackingLevel.CreateDependencyGraph(nodeFactory);
 
-            return new ILScanner(graph, nodeFactory, _compilationRoots, _ilProvider, new NullDebugInformationProvider(), _logger, _parallelism);
+            return new ILScanner(graph, nodeFactory, _compilationRoots, _ilProvider, new DebugInformationProvider(), _logger,
+                new DevirtualizationManager(), _compilationGroup, _instrSetSupport, null, new MethodImportationErrorProvider(), default, _parallelism);
         }
     }
 }

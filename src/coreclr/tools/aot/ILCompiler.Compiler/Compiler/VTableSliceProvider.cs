@@ -11,7 +11,7 @@ namespace ILCompiler
     /// </summary>
     public abstract class VTableSliceProvider
     {
-        internal abstract VTableSliceNode GetSlice(TypeDesc type);
+        protected internal abstract VTableSliceNode GetSlice(TypeDesc type);
     }
 
     /// <summary>
@@ -19,7 +19,7 @@ namespace ILCompiler
     /// </summary>
     public sealed class LazyVTableSliceProvider : VTableSliceProvider
     {
-        internal override VTableSliceNode GetSlice(TypeDesc type)
+        protected internal override VTableSliceNode GetSlice(TypeDesc type)
         {
             return new LazilyBuiltVTableSliceNode(type);
         }

@@ -122,10 +122,12 @@ namespace ILCompiler
             return _preinitializationManager;
         }
 
+#if false
         public ILScannerBuilder GetILScannerBuilder(CompilationModuleGroup compilationGroup = null)
         {
             return new ILScannerBuilder(_context, compilationGroup ?? _compilationGroup, _nameMangler, GetILProvider(), GetPreinitializationManager());
         }
+#endif
     }
 
     [Flags]
