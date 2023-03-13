@@ -27,6 +27,11 @@ namespace ILCompiler.DependencyAnalysis
                     return new TypeHandleGenericLookupResult(type);
                 });
 
+                _typeDictionarySymbols = new NodeCache<TypeDesc, GenericLookupResult>(type =>
+                {
+                    return new TypeDictionaryGenericLookupResult(type);
+                });
+
                 _unwrapNullableSymbols = new NodeCache<TypeDesc, GenericLookupResult>(type =>
                 {
                     return new UnwrapNullableTypeHandleGenericLookupResult(type);
@@ -93,6 +98,13 @@ namespace ILCompiler.DependencyAnalysis
             public GenericLookupResult Type(TypeDesc type)
             {
                 return _typeSymbols.GetOrAdd(type);
+            }
+
+            private NodeCache<TypeDesc, GenericLookupResult> _typeDictionarySymbols;
+
+            public GenericLookupResult TypeDictionary(TypeDesc type)
+            {
+                return _typeDictionarySymbols.GetOrAdd(type);
             }
 
             private NodeCache<TypeDesc, GenericLookupResult> _unwrapNullableSymbols;

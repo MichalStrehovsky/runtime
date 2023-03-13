@@ -296,7 +296,7 @@ namespace ILCompiler
 
         private sealed class ScannedDictionaryLayoutProvider : DictionaryLayoutProvider
         {
-            private Dictionary<TypeSystemEntity, (GenericLookupResult[] Slots, GenericLookupResult[] DiscardedSlots)> _layouts = new();
+            private Dictionary<TypeSystemEntity, (GenericLookupResult[] Slots, KeyValuePair<GenericLookupResult, GenericLookupResult>[] RemappedSlots)> _layouts = new();
             private HashSet<TypeSystemEntity> _entitiesWithForcedLazyLookups = new HashSet<TypeSystemEntity>();
 
             public ScannedDictionaryLayoutProvider(NodeFactory factory, ImmutableArray<DependencyNodeCore<NodeFactory>> markedNodes)
@@ -306,7 +306,7 @@ namespace ILCompiler
                     if (node is DictionaryLayoutNode layoutNode)
                     {
                         TypeSystemEntity owningMethodOrType = layoutNode.OwningMethodOrType;
-                        GenericLookupResult[] layout = OptimizeSlots(factory, layoutNode.Entries, out GenericLookupResult[] discarded);
+                        GenericLookupResult[] layout = OptimizeSlots(factory, owningMethodOrType, layoutNode.Entries, out KeyValuePair<GenericLookupResult, GenericLookupResult>[] discarded);
                         _layouts.Add(owningMethodOrType, (layout, discarded));
                     }
                     else if (node is ReadyToRunGenericHelperNode genericLookup
@@ -321,27 +321,54 @@ namespace ILCompiler
                 }
             }
 
-            private static GenericLookupResult[] OptimizeSlots(NodeFactory factory, IEnumerable<GenericLookupResult> slots, out GenericLookupResult[] discarded)
+            private static GenericLookupResult[] OptimizeSlots(NodeFactory factory, TypeSystemEntity owningMethodOrType, IEnumerable<GenericLookupResult> slots, out KeyValuePair<GenericLookupResult, GenericLookupResult>[] remapped)
             {
                 ArrayBuilder<GenericLookupResult> slotBuilder = default;
-                ArrayBuilder<GenericLookupResult> discardedBuilder = default;
+                ArrayBuilder<KeyValuePair<GenericLookupResult, GenericLookupResult>> remappedBuilder = default;
 
-                // We go over all slots in the layout, looking for references to method dictionaries
-                // that are going to be empty.
-                // Set those slots aside so that we can avoid generating the references to such dictionaries.
-                // We do this for methods only because method dictionaries have a high overhead (they
-                // get prefixed with a pointer-padded 32-bit hashcode and might end up in various
-                // summary tables as well).
+                // There are some dictionary entry kinds that map to the same thing but we model
+                // them as a different thing in the analysis. Collapse them into a single dictionary entry now
+                // so that we don't end up with multiple slots referencing the same thing.
+
+                var entriesReferencingFullMethodTables = new Dictionary<TypeDesc, GenericLookupResult>();
+                foreach (GenericLookupResult lookupResult in slots)
+                {
+                    // Only preserve TypeDictionaryGenericLookupResult weakly - we might end up replacing that one with a null slot
+                    // in the code below. A dictionary containing `TypeDict(Foo), TypeHandle(Foo)` should not be collapsed to
+                    // `TypeDict(Foo)`.
+                    if (lookupResult is TypeDictionaryGenericLookupResult typeDict && !entriesReferencingFullMethodTables.ContainsKey(typeDict.Type))
+                        entriesReferencingFullMethodTables[typeDict.Type] = typeDict;
+                    else if (lookupResult is TypeHandleGenericLookupResult typeHandle) // this should win over TypeDict
+                        entriesReferencingFullMethodTables[typeHandle.Type] = typeHandle;
+                }
 
                 foreach (GenericLookupResult lookupResult in slots)
                 {
+                    TypeSystemEntity dictionaryOwner = null;
                     if (lookupResult is MethodDictionaryGenericLookupResult methodDictLookup)
+                        dictionaryOwner = methodDictLookup.Method.GetCanonMethodTarget(CanonicalFormKind.Specific);
+                    else if (lookupResult is TypeDictionaryGenericLookupResult typeDictLookup)
+                        dictionaryOwner = typeDictLookup.Type.ConvertToCanonForm(CanonicalFormKind.Specific);
+
+                    // Map references to empty dictionary into a special null slot.
+                    // These will be generated as a load of a null context.
+                    if (dictionaryOwner != null && IsEffectivelyEmpty(factory.GenericDictionaryLayout(dictionaryOwner), dictionaryOwner))
                     {
-                        MethodDesc targetMethod = methodDictLookup.Method.GetCanonMethodTarget(CanonicalFormKind.Specific);
-                        DictionaryLayoutNode targetLayout = factory.GenericDictionaryLayout(targetMethod);
-                        if (targetLayout.IsEmpty)
+                        remappedBuilder.Add(new KeyValuePair<GenericLookupResult, GenericLookupResult>(lookupResult, null));
+                        continue;
+                    }
+
+                    // Deduplicate dictionary entries that map to the same thing.
+                    TypeDesc lookedUpMethodTable = null;
+                    if (lookupResult is TypeDictionaryGenericLookupResult typeDict)
+                        lookedUpMethodTable = typeDict.Type;
+
+                    if (lookedUpMethodTable != null)
+                    {
+                        var newLookup = entriesReferencingFullMethodTables[lookedUpMethodTable];
+                        if (!lookupResult.Equals(newLookup))
                         {
-                            discardedBuilder.Add(lookupResult);
+                            remappedBuilder.Add(new KeyValuePair<GenericLookupResult, GenericLookupResult>(lookupResult, newLookup));
                             continue;
                         }
                     }
@@ -349,7 +376,27 @@ namespace ILCompiler
                     slotBuilder.Add(lookupResult);
                 }
 
-                discarded = discardedBuilder.ToArray();
+                static bool IsEffectivelyEmpty(DictionaryLayoutNode layout, TypeSystemEntity owner)
+                {
+                    bool isEmpty = true;
+
+                    foreach (GenericLookupResult entry in layout.Entries)
+                    {
+                        if (entry is TypeDictionaryGenericLookupResult typeDict
+                            && owner is DefType ownerType)
+                        {
+                            if (typeDict.Type == ownerType.ConvertToSharedRuntimeDeterminedForm())
+                                continue;
+                        }
+
+                        isEmpty = false;
+                        break;
+                    }
+
+                    return isEmpty;
+                }
+
+                remapped = remappedBuilder.ToArray();
                 return slotBuilder.ToArray();
             }
 
@@ -367,7 +414,7 @@ namespace ILCompiler
                     Debug.Assert(false);
                     throw new ScannerFailedException($"A dictionary layout was not computed by the IL scanner.");
                 }
-                return new PrecomputedDictionaryLayoutNode(methodOrType, layout.Slots, layout.DiscardedSlots);
+                return new PrecomputedDictionaryLayoutNode(methodOrType, layout.Slots, layout.RemappedSlots);
             }
 
             public override DictionaryLayoutNode GetLayout(TypeSystemEntity methodOrType)

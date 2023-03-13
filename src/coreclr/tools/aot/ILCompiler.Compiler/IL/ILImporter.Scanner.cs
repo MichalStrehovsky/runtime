@@ -586,7 +586,7 @@ namespace Internal.IL
                             }
 
                             if (hasHiddenParameter)
-                                instParam = GetGenericLookupHelper(ReadyToRunHelperId.TypeHandle, runtimeDeterminedMethod.OwningType);
+                                instParam = GetGenericLookupHelper(ReadyToRunHelperId.TypeDictionary, runtimeDeterminedMethod.OwningType);
                         }
 
                         if (instParam != null)
@@ -639,7 +639,7 @@ namespace Internal.IL
                         if (referencingArrayAddressMethod && !_isReadOnly)
                         {
                             // Address method is special - it expects an instantiation argument, unless a readonly prefix was applied.
-                            _dependencies.Add(GetGenericLookupHelper(ReadyToRunHelperId.TypeHandle, runtimeDeterminedMethod.OwningType), reason);
+                            _dependencies.Add(GetGenericLookupHelper(ReadyToRunHelperId.NecessaryTypeHandle, runtimeDeterminedMethod.OwningType), reason);
                         }
                     }
                 }

@@ -238,6 +238,7 @@ namespace ILCompiler
             switch (lookupKind)
             {
                 case ReadyToRunHelperId.TypeHandle:
+                case ReadyToRunHelperId.TypeDictionary:
                 case ReadyToRunHelperId.NecessaryTypeHandle:
                 case ReadyToRunHelperId.DefaultConstructor:
                 case ReadyToRunHelperId.TypeHandleForCasting:

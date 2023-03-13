@@ -1754,7 +1754,7 @@ namespace Internal.JitInterface
                     }
                 }
 
-                if (pResolvedToken.tokenType == CorInfoTokenKind.CORINFO_TOKENKIND_NewObj
+                if ((pResolvedToken.tokenType == CorInfoTokenKind.CORINFO_TOKENKIND_NewObj && td.IsGCPointer)
                         || pResolvedToken.tokenType == CorInfoTokenKind.CORINFO_TOKENKIND_Newarr
                         || pResolvedToken.tokenType == CorInfoTokenKind.CORINFO_TOKENKIND_Box
                         || pResolvedToken.tokenType == CorInfoTokenKind.CORINFO_TOKENKIND_Constrained)
@@ -1768,6 +1768,11 @@ namespace Internal.JitInterface
                 else if (pResolvedToken.tokenType == CorInfoTokenKind.CORINFO_TOKENKIND_Ldtoken)
                 {
                     helperId = _compilation.GetLdTokenHelperForType(td);
+                }
+                else if ((pResolvedToken.tokenType == CorInfoTokenKind.CORINFO_TOKENKIND_Method && !td.IsMdArray)
+                    || pResolvedToken.tokenType == CorInfoTokenKind.CORINFO_TOKENKIND_NewObj)
+                {
+                    helperId = ReadyToRunHelperId.TypeDictionary;
                 }
                 else
                 {
