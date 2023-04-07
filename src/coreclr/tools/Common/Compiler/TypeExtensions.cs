@@ -220,6 +220,71 @@ namespace ILCompiler
             return type.IsMdArray || elementType.IsPointer || elementType.IsFunctionPointer;
         }
 
+        public static bool? CompareTypesForCast(TypeDesc fromType, TypeDesc toType)
+        {
+            bool? result = null;
+
+            if (fromType.IsIDynamicInterfaceCastable)
+            {
+                result = null;
+            }
+            else if (toType.IsNullable)
+            {
+                // If casting to Nullable<T>, don't try to optimize
+                result = null;
+            }
+            else if (!fromType.IsCanonicalSubtype(CanonicalFormKind.Any) && !toType.IsCanonicalSubtype(CanonicalFormKind.Any))
+            {
+                // If the types are not shared, we can check directly.
+                result = fromType.CanCastTo(toType);
+            }
+            else if (fromType.IsCanonicalSubtype(CanonicalFormKind.Any) && !toType.IsCanonicalSubtype(CanonicalFormKind.Any))
+            {
+                // Casting from a shared type to an unshared type.
+                // Only handle casts to interface types for now
+                if (toType.IsInterface)
+                {
+                    // Do a preliminary check.
+                    bool canCast = fromType.CanCastTo(toType);
+
+                    // Pass back positive results unfiltered. The unknown type
+                    // parameters in fromClass did not come into play.
+                    if (canCast)
+                    {
+                        result = true;
+                    }
+                    // We have __Canon parameter(s) in fromClass, somewhere.
+                    //
+                    // In CanCastTo, these __Canon(s) won't match the interface or
+                    // instantiated types on the interface, so CanCastTo may
+                    // return false negatives.
+                    //
+                    // Only report MustNot if the fromClass is not __Canon
+                    // and the interface is not instantiated; then there is
+                    // no way for the fromClass __Canon(s) to confuse things.
+                    //
+                    //    __Canon       -> IBar             May
+                    //    IFoo<__Canon> -> IFoo<string>     May
+                    //    IFoo<__Canon> -> IBar             MustNot
+                    //
+                    else if (fromType.IsCanonicalDefinitionType(CanonicalFormKind.Any))
+                    {
+                        result = null;
+                    }
+                    else if (toType.HasInstantiation)
+                    {
+                        result = null;
+                    }
+                    else
+                    {
+                        result = false;
+                    }
+                }
+            }
+
+            return result;
+        }
+
         public static bool? CompareTypesForEquality(TypeDesc type1, TypeDesc type2)
         {
             bool? result = null;

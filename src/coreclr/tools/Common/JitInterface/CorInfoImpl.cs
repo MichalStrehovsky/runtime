@@ -2579,68 +2579,12 @@ namespace Internal.JitInterface
             TypeDesc fromType = HandleToObject(fromClass);
             TypeDesc toType = HandleToObject(toClass);
 
-            TypeCompareState result = TypeCompareState.May;
-
-            if (fromType.IsIDynamicInterfaceCastable)
+            TypeCompareState result = TypeExtensions.CompareTypesForCast(fromType, toType) switch
             {
-                result = TypeCompareState.May;
-            }
-            else if (toType.IsNullable)
-            {
-                // If casting to Nullable<T>, don't try to optimize
-                result = TypeCompareState.May;
-            }
-            else if (!fromType.IsCanonicalSubtype(CanonicalFormKind.Any) && !toType.IsCanonicalSubtype(CanonicalFormKind.Any))
-            {
-                // If the types are not shared, we can check directly.
-                if (fromType.CanCastTo(toType))
-                    result = TypeCompareState.Must;
-                else
-                    result = TypeCompareState.MustNot;
-            }
-            else if (fromType.IsCanonicalSubtype(CanonicalFormKind.Any) && !toType.IsCanonicalSubtype(CanonicalFormKind.Any))
-            {
-                // Casting from a shared type to an unshared type.
-                // Only handle casts to interface types for now
-                if (toType.IsInterface)
-                {
-                    // Do a preliminary check.
-                    bool canCast = fromType.CanCastTo(toType);
-
-                    // Pass back positive results unfiltered. The unknown type
-                    // parameters in fromClass did not come into play.
-                    if (canCast)
-                    {
-                        result = TypeCompareState.Must;
-                    }
-                    // We have __Canon parameter(s) in fromClass, somewhere.
-                    //
-                    // In CanCastTo, these __Canon(s) won't match the interface or
-                    // instantiated types on the interface, so CanCastTo may
-                    // return false negatives.
-                    //
-                    // Only report MustNot if the fromClass is not __Canon
-                    // and the interface is not instantiated; then there is
-                    // no way for the fromClass __Canon(s) to confuse things.
-                    //
-                    //    __Canon       -> IBar             May
-                    //    IFoo<__Canon> -> IFoo<string>     May
-                    //    IFoo<__Canon> -> IBar             MustNot
-                    //
-                    else if (fromType.IsCanonicalDefinitionType(CanonicalFormKind.Any))
-                    {
-                        result = TypeCompareState.May;
-                    }
-                    else if (toType.HasInstantiation)
-                    {
-                        result = TypeCompareState.May;
-                    }
-                    else
-                    {
-                        result = TypeCompareState.MustNot;
-                    }
-                }
-            }
+                true => TypeCompareState.Must,
+                false => TypeCompareState.MustNot,
+                _ => TypeCompareState.May,
+            };
 
 #if READYTORUN
             // In R2R it is a breaking change for a previously positive
