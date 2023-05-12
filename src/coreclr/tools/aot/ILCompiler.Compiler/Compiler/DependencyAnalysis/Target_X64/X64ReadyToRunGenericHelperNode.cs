@@ -75,6 +75,28 @@ namespace ILCompiler.DependencyAnalysis
 
         protected sealed override void EmitCode(NodeFactory factory, ref X64Emitter encoder, bool relocsOnly)
         {
+            if (factory.LazyGenericsPolicy.UsesLazyGenerics(_dictionaryOwner))
+            {
+                // Find the generic dictionary slot
+                int dictionarySlot = 0;
+                if (!relocsOnly)
+                {
+                    // The concrete slot won't be known until we're emitting data - don't ask for it in relocsOnly.
+                    if (!factory.GenericDictionaryLayout(_dictionaryOwner).TryGetSlotForEntry(_lookupSignature, out dictionarySlot))
+                    {
+                        encoder.EmitZeroReg(encoder.TargetRegister.Result);
+                        encoder.EmitRET();
+                        return;
+                    }
+                }
+
+                encoder.EmitLEAQ(encoder.TargetRegister.Arg1,
+                    factory.NativeLayout.NativeLayoutSignature(factory.NativeLayout.DictionarySignature(_dictionaryOwner), s_NativeLayoutSignaturePrefix, _dictionaryOwner));
+                encoder.EmitMOV(encoder.TargetRegister.Arg2, dictionarySlot);
+                encoder.EmitJMP(factory.HelperEntrypoint(HelperEntrypoint.GenericLookupInSlot));
+                return;
+            }
+
             // First load the generic context into the context register.
             EmitLoadGenericContext(factory, ref encoder, relocsOnly);
 

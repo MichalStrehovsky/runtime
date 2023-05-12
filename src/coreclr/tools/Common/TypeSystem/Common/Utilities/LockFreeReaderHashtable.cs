@@ -20,6 +20,9 @@ namespace Internal.TypeSystem
     /// </summary>
     /// <typeparam name="TKey"></typeparam>
     /// <typeparam name="TValue"></typeparam>
+#if SYSTEM_PRIVATE_CORELIB
+    [ForceDictionaryLookups]
+#endif
     public abstract class LockFreeReaderHashtable<TKey, TValue> where TValue : class
     {
         private const int _initialSize = 16;

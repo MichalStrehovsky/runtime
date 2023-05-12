@@ -347,6 +347,9 @@ namespace System
 
         [Intrinsic]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#if NATIVEAOT
+        [ForceDictionaryLookups]
+#endif
         internal static unsafe void Memmove<T>(ref T destination, ref T source, nuint elementCount)
         {
 #pragma warning disable 8500 // sizeof of managed types

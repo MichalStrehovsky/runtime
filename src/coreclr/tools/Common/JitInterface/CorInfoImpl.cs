@@ -1180,6 +1180,16 @@ namespace Internal.JitInterface
             // later.
             if (!_compilation.CanInline(MethodBeingCompiled, method))
                 return false;
+#else
+            if (/*method.HasInstantiation
+                &&*/ method.GetCanonMethodTarget(CanonicalFormKind.Specific).IsCanonicalMethod(CanonicalFormKind.Any)
+                && _compilation.NodeFactory.LazyGenericsPolicy.UsesLazyGenerics(method))
+            {
+                // Don't allow inlining methods that use lazy generics. The scanner didn't analyze dependencies
+                // of the concrete method and we run the risk of the compilation graph reaching beyond the
+                // scanner graph.
+                return false;
+            }
 #endif
             MethodIL methodIL = method.IsUnboxingThunk() ? null : _compilation.GetMethodIL(method);
             return Get_CORINFO_METHOD_INFO(method, methodIL, info);

@@ -40,6 +40,9 @@ namespace System
                 new ReadOnlyCollection<T>(array);
         }
 
+#if NATIVEAOT
+        [ForceDictionaryLookups]
+#endif
         public static void Resize<T>([NotNull] ref T[]? array, int newSize)
         {
             if (newSize < 0)

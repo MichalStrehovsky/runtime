@@ -50,6 +50,9 @@
     <Compile Include="$(AotCommonPath)\System\Collections\Generic\LowLevelDictionary.cs">
       <Link>LowLevelDictionary.cs</Link>
     </Compile>
+    <Compile Include="$(AotCommonPath)\System\Runtime\CompilerServices\ForceDictionaryLookupsAttribute.cs">
+      <Link>System\Runtime\CompilerServices\ForceDictionaryLookupsAttribute.cs</Link>
+    </Compile>
     <Compile Include="$(CommonPath)\System\NotImplemented.cs">
       <Link>NotImplemented.cs</Link>
     </Compile>

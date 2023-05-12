@@ -338,19 +338,23 @@ namespace ILCompiler
             }
 
             GenericContextSource contextSource;
+            TypeSystemEntity contextEntity;
 
             if (contextMethod.RequiresInstMethodDescArg())
             {
                 contextSource = GenericContextSource.MethodParameter;
+                contextEntity = contextMethod;
             }
             else if (contextMethod.RequiresInstMethodTableArg())
             {
                 contextSource = GenericContextSource.TypeParameter;
+                contextEntity = contextMethod.OwningType;
             }
             else
             {
                 Debug.Assert(contextMethod.AcquiresInstMethodTableFromThis());
                 contextSource = GenericContextSource.ThisObject;
+                contextEntity = contextMethod.OwningType;
             }
 
             //
@@ -381,14 +385,10 @@ namespace ILCompiler
 
             // Can we do a fixed lookup? Start by checking if we can get to the dictionary.
             // Context source having a vtable with fixed slots is a prerequisite.
-            if (contextSource == GenericContextSource.MethodParameter
-                || HasFixedSlotVTable(contextMethod.OwningType))
+            if (!_nodeFactory.LazyGenericsPolicy.UsesLazyGenerics(contextEntity)
+                && (contextSource == GenericContextSource.MethodParameter || HasFixedSlotVTable(contextMethod.OwningType)))
             {
-                DictionaryLayoutNode dictionaryLayout;
-                if (contextSource == GenericContextSource.MethodParameter)
-                    dictionaryLayout = _nodeFactory.GenericDictionaryLayout(contextMethod);
-                else
-                    dictionaryLayout = _nodeFactory.GenericDictionaryLayout(contextMethod.OwningType);
+                DictionaryLayoutNode dictionaryLayout = _nodeFactory.GenericDictionaryLayout(contextEntity);
 
                 // If the dictionary layout has fixed slots, we can compute the lookup now. Otherwise defer to helper.
                 if (dictionaryLayout.HasFixedSlots)

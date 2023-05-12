@@ -191,7 +191,6 @@
     <Compile Include="System\Runtime\DependentHandle.cs" />
     <Compile Include="System\Runtime\CompilerServices\ForceLazyDictionaryAttribute.cs" />
     <Compile Include="System\Runtime\CompilerServices\EagerStaticClassConstructionAttribute.cs" />
-    <Compile Include="System\Runtime\CompilerServices\ForceDictionaryLookupsAttribute.cs" />
     <Compile Include="System\Runtime\CompilerServices\RuntimeFeature.NativeAot.cs" />
     <Compile Include="System\Runtime\CompilerServices\StaticClassConstructionContext.cs" />
     <Compile Include="System\Runtime\ExceptionIDs.cs" />
@@ -362,6 +361,9 @@
     </Compile>
     <Compile Include="$(CompilerCommonPath)\Internal\Runtime\CanonTypeKind.cs">
       <Link>Internal\Runtime\CanonTypeKind.cs</Link>
+    </Compile>
+    <Compile Include="$(AotCommonPath)\System\Runtime\CompilerServices\ForceDictionaryLookupsAttribute.cs">
+      <Link>System\Runtime\CompilerServices\ForceDictionaryLookupsAttribute.cs</Link>
     </Compile>
     <Compile Include="$(AotCommonPath)\Internal\Runtime\MethodTable.cs">
       <Link>Internal\Runtime\MethodTable.cs</Link>

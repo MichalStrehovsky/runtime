@@ -141,8 +141,18 @@ namespace ILCompiler.DependencyAnalysis
         {
             if (HasFixedSlots)
             {
+                if (_owningMethodOrType.ToString() == "[S.P.CoreLib]System.Collections.Generic.Dictionary`2<System.__Canon,System.__Canon>")
+                {
+                    Console.WriteLine();
+                }
+
+                bool isLazy = factory.LazyGenericsPolicy.UsesLazyGenerics(_owningMethodOrType);
+
                 foreach (GenericLookupResult lookupResult in FixedEntries)
                 {
+                    if (isLazy)
+                        yield return new DependencyListEntry(lookupResult.TemplateDictionaryNode(factory), "Lazy generic lookup");
+
                     foreach (DependencyNodeCore<NodeFactory> dependency in lookupResult.NonRelocDependenciesFromUsage(factory))
                     {
                         yield return new DependencyListEntry(dependency, "GenericLookupResultDependency");

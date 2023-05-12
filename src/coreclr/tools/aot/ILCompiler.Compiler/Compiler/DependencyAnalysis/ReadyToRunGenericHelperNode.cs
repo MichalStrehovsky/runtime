@@ -31,6 +31,8 @@ namespace ILCompiler.DependencyAnalysis
         public TypeSystemEntity DictionaryOwner => _dictionaryOwner;
         public GenericLookupResult LookupSignature => _lookupSignature;
 
+        private static Utf8String s_NativeLayoutSignaturePrefix = new Utf8String("__USGDictionarySig_");
+
         public bool HandlesInvalidEntries(NodeFactory factory)
         {
             Debug.Assert(factory.MarkingComplete);
@@ -124,6 +126,11 @@ namespace ILCompiler.DependencyAnalysis
 
         public IEnumerable<DependencyListEntry> InstantiateDependencies(NodeFactory factory, Instantiation typeInstantiation, Instantiation methodInstantiation)
         {
+            if (factory.LazyGenericsPolicy.UsesLazyGenerics(_dictionaryOwner))
+            {
+                return Array.Empty<DependencyListEntry>();
+            }
+
             DependencyList result = new DependencyList();
 
             var lookupContext = new GenericLookupResultContext(_dictionaryOwner, typeInstantiation, methodInstantiation);
@@ -223,6 +230,22 @@ namespace ILCompiler.DependencyAnalysis
             {
                 MethodDesc targetMethod = ((DelegateCreationInfo)_target).PossiblyUnresolvedTargetMethod.GetCanonMethodTarget(CanonicalFormKind.Specific);
                 factory.MetadataManager.GetDependenciesDueToDelegateCreation(ref dependencies, factory, targetMethod);
+            }
+
+            if (factory.LazyGenericsPolicy.UsesLazyGenerics(_dictionaryOwner))
+            {
+                dependencies.Add(_lookupSignature.TemplateDictionaryNode(factory), "Lazy generics");
+
+                if (_id == ReadyToRunHelperId.GetGCStaticBase || _id == ReadyToRunHelperId.GetThreadStaticBase)
+                {
+                    // If the type has a lazy static constructor, we also need the non-GC static base to be available as
+                    // a template dictionary node.
+                    if (TriggersLazyStaticConstructor(factory))
+                    {
+                        GenericLookupResult nonGcRegionLookup = factory.GenericLookup.TypeNonGCStaticBase((TypeDesc)_target);
+                        dependencies.Add(nonGcRegionLookup.TemplateDictionaryNode(factory), "Lazy generics");
+                    }
+                }
             }
 
             return dependencies;
