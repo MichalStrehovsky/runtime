@@ -333,7 +333,7 @@ namespace ILCompiler.DependencyAnalysis
                 if (_type.RuntimeInterfaces.Length > 0)
                     return true;
 
-                return _hasConditionalDependenciesFromMetadataManager;
+                return true;
             }
         }
 
@@ -404,7 +404,7 @@ namespace ILCompiler.DependencyAnalysis
                     //    method implementations.
                     //
                     // We also skip abstract methods since they don't have a body to refer to.
-                    if ((impl.OwningType == defType || implOwnerIsAbstract) && !impl.IsAbstract)
+                    if (/*(impl.OwningType == defType || implOwnerIsAbstract) && */!impl.IsAbstract)
                     {
                         MethodDesc canonImpl = impl.GetCanonMethodTarget(CanonicalFormKind.Specific);
 

@@ -52,7 +52,7 @@ namespace ILCompiler.DependencyAnalysis
             {
                 new CombinedDependencyListEntry(
                     RealBody,
-                    factory.ConstructedTypeSymbol(owningType),
+                    factory.NecessaryTypeSymbol(owningType),
                     "Instance method on a constructed type"),
             };
         }

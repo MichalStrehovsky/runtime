@@ -71,10 +71,10 @@ namespace ILCompiler.DependencyAnalysis
             return dependencyList;
         }
 
-        protected override ISymbolNode GetBaseTypeNode(NodeFactory factory)
-        {
-            return _type.BaseType != null ? factory.ConstructedTypeSymbol(_type.BaseType) : null;
-        }
+        //protected override ISymbolNode GetBaseTypeNode(NodeFactory factory)
+        //{
+        //    return _type.BaseType != null ? factory.NecessaryTypeSymbol(_type.BaseType) : null;
+        //}
 
         protected override ISymbolNode GetNonNullableValueTypeArrayElementTypeNode(NodeFactory factory)
         {
