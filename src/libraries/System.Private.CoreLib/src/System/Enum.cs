@@ -1354,7 +1354,8 @@ namespace System
         /// <remarks>The string representation of the value of this instance.</remarks>
         public override string ToString()
         {
-            RuntimeType enumType = (RuntimeType)GetType();
+            return string.Empty;
+            /*RuntimeType enumType = (RuntimeType)GetType();
             ref byte rawData = ref this.GetRawData();
             return InternalGetCorElementType() switch
             {
@@ -1384,7 +1385,7 @@ namespace System
                 };
 #else
                 throw CreateUnknownEnumTypeException();
-#endif
+#endif*/
         }
 
         /// <summary>Converts the value of this instance to its equivalent string representation using the specified format.</summary>
@@ -1394,10 +1395,10 @@ namespace System
         /// <exception cref="InvalidOperationException"><paramref name="format"/> equals "X" or "x", but the enumeration type is unknown.</exception>
         public string ToString([StringSyntax(StringSyntaxAttribute.EnumFormat)] string? format)
         {
-            if (string.IsNullOrEmpty(format))
-            {
+            //if (string.IsNullOrEmpty(format))
+            //{
                 return ToString();
-            }
+            /*}
 
             if (format.Length == 1)
             {
@@ -1435,7 +1436,7 @@ namespace System
                 };
 #else
                 throw CreateUnknownEnumTypeException();
-#endif
+#endif*/
         }
 
         /// <summary>This method overload is obsolete; use <see cref="ToString()"/>.</summary>
@@ -1687,7 +1688,9 @@ namespace System
         /// <returns><see langword="true"/> if the formatting was successful; otherwise, <see langword="false"/>.</returns>
         bool ISpanFormattable.TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider)
         {
-            RuntimeType enumType = (RuntimeType)GetType();
+            charsWritten = 0;
+            return false;
+            /*RuntimeType enumType = (RuntimeType)GetType();
             ref byte rawData = ref this.GetRawData();
             CorElementType corElementType = InternalGetCorElementType();
 
@@ -1734,7 +1737,7 @@ namespace System
 #endif
                     _ => throw CreateUnknownEnumTypeException(),
                 };
-            }
+            }*/
         }
 
         /// <summary>Tries to format the value of the enumerated type instance into the provided span of characters.</summary>
@@ -1803,7 +1806,10 @@ namespace System
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // format is most frequently a constant, and we want it exposed to the implementation; this should be inlined automatically, anyway
         internal static unsafe bool TryFormatUnconstrained<TEnum>(TEnum value, Span<char> destination, out int charsWritten, [StringSyntax(StringSyntaxAttribute.EnumFormat)] ReadOnlySpan<char> format = default)
         {
-            Debug.Assert(typeof(TEnum).IsEnum);
+            charsWritten = 0;
+            return false;
+
+            /*Debug.Assert(typeof(TEnum).IsEnum);
             Debug.Assert(value is not null);
 
             RuntimeType rt = (RuntimeType)typeof(TEnum);
@@ -1850,7 +1856,7 @@ namespace System
 #endif
             }
 
-            throw CreateUnknownEnumTypeException();
+            throw CreateUnknownEnumTypeException();*/
         }
 
         /// <summary>Core implementation for  <see cref="TryFormat"/> when no format specifier was provided.</summary>

@@ -141,27 +141,29 @@ namespace System
 
         public override string ToString()
         {
-            return Number.UInt32ToDecStr(m_value);
+            return ""; //Number.UInt32ToDecStr(m_value);
         }
 
         public string ToString([StringSyntax(StringSyntaxAttribute.NumericFormat)] string? format)
         {
-            return Number.FormatUInt32(m_value, format, null);
+            return ""; //Number.FormatUInt32(m_value, format, null);
         }
 
         public string ToString(IFormatProvider? provider)
         {
-            return Number.UInt32ToDecStr(m_value);
+            return ""; //Number.UInt32ToDecStr(m_value);
         }
 
         public string ToString([StringSyntax(StringSyntaxAttribute.NumericFormat)] string? format, IFormatProvider? provider)
         {
-            return Number.FormatUInt32(m_value, format, provider);
+            return ""; //Number.FormatUInt32(m_value, format, provider);
         }
 
         public bool TryFormat(Span<char> destination, out int charsWritten, [StringSyntax(StringSyntaxAttribute.NumericFormat)] ReadOnlySpan<char> format = default, IFormatProvider? provider = null)
         {
-            return Number.TryFormatUInt32(m_value, format, provider, destination, out charsWritten);
+            charsWritten = 0;
+            return false;
+            // return Number.TryFormatUInt32(m_value, format, provider, destination, out charsWritten);
         }
 
         /// <inheritdoc cref="IUtf8SpanFormattable.TryFormat" />
