@@ -91,7 +91,7 @@ namespace ILCompiler.DependencyAnalysis
             GCDescEncoder.EncodeGCDesc(ref builder, _type);
         }
 
-        protected override void OutputInterfaceMap(NodeFactory factory, ref ObjectDataBuilder objData)
+        protected override void OutputInterfaceMap(NodeFactory factory, ref ObjectDataBuilder objData, bool relocsOnly)
         {
             for (int i = 0; i < _type.RuntimeInterfaces.Length; i++)
             {

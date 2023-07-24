@@ -41,6 +41,7 @@ namespace ILCompiler.DependencyAnalysis
             dependencies.Add(factory.TypeMetadata((MetadataType)_method.OwningType), "Owning type metadata");
 
             CustomAttributeBasedDependencyAlgorithm.AddDependenciesDueToCustomAttributes(ref dependencies, factory, ((EcmaMethod)_method));
+            ConstraintsBasedDependencyAlgorithm.AddDependenciesDueToConstraints(ref dependencies, factory, _method.Instantiation);
 
             MethodSignature sig = _method.Signature;
             const string reason = "Method signature metadata";

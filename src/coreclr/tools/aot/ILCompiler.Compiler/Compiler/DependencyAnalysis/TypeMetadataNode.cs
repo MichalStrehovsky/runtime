@@ -38,6 +38,7 @@ namespace ILCompiler.DependencyAnalysis
             DependencyList dependencies = new DependencyList();
 
             CustomAttributeBasedDependencyAlgorithm.AddDependenciesDueToCustomAttributes(ref dependencies, factory, ((EcmaType)_type));
+            ConstraintsBasedDependencyAlgorithm.AddDependenciesDueToConstraints(ref dependencies, factory, _type.Instantiation);
 
             DefType containingType = _type.ContainingType;
             if (containingType != null)

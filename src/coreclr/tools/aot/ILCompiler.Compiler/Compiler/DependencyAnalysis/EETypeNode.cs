@@ -669,7 +669,7 @@ namespace ILCompiler.DependencyAnalysis
 
                 // Emit interface map
                 SlotCounter interfaceSlotCounter = SlotCounter.BeginCounting(ref /* readonly */ objData);
-                OutputInterfaceMap(factory, ref objData);
+                OutputInterfaceMap(factory, ref objData, relocsOnly);
 
                 // Update slot count
                 int numberOfInterfaceSlots = interfaceSlotCounter.CountSlots(ref /* readonly */ objData);
@@ -1062,13 +1062,43 @@ namespace ILCompiler.DependencyAnalysis
             return factory.NecessaryTypeSymbol(interfaceType);
         }
 
-        protected virtual void OutputInterfaceMap(NodeFactory factory, ref ObjectDataBuilder objData)
+        protected virtual void OutputInterfaceMap(NodeFactory factory, ref ObjectDataBuilder objData, bool relocsOnly)
         {
             Debug.Assert(EmitVirtualSlotsAndInterfaces);
 
+            MetadataType removedInterfaceType = _type.Context.GetOptionalHelperType("IRemovedInterface");
+
             foreach (var itf in _type.RuntimeInterfaces)
             {
-                objData.EmitPointerReloc(GetInterfaceTypeNode(factory, itf));
+                IEETypeNode interfaceTypeNode = GetInterfaceTypeNode(factory, itf);
+                if (removedInterfaceType != null)
+                {
+                    bool replaceWithDummy = false;
+                    if (relocsOnly && !VariantInterfaceMethodUseNode.IsVariantInterfaceImplementation(factory, _type, itf))
+                    {
+                        // If we're not generating the object data yet and the interface is not relevant to
+                        // variant casting, report a dummy reloc. We'll wait to see if it's necessary.
+                        replaceWithDummy = true;
+                    }
+                    else if (!relocsOnly)
+                    {
+                        // If we're generating object data and the interface wasn't necessary, either downgrade
+                        // to a necessary type symbol, or replace with a dummy.
+                        if (!interfaceTypeNode.Marked)
+                        {
+                            IEETypeNode necessaryInterfaceNode = factory.NecessaryTypeSymbol(itf);
+                            if (necessaryInterfaceNode.Marked)
+                                interfaceTypeNode = necessaryInterfaceNode;
+                            else
+                                replaceWithDummy = true;
+                        }
+                    }
+
+                    if (replaceWithDummy)
+                        interfaceTypeNode = GetInterfaceTypeNode(factory, removedInterfaceType);
+                }
+
+                objData.EmitPointerReloc(interfaceTypeNode);
             }
         }
 
