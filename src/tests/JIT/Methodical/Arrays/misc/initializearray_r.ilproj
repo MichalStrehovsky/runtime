@@ -1,6 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.IL">
   <PropertyGroup>
     <Optimize>true</Optimize>
+
+    <!-- NativeAOT doesn't support non-intrinsic expansion of InitializeArray -->
+    <NativeAotIncompatible>true</NativeAotIncompatible>
   </PropertyGroup>
   <PropertyGroup>
     <DebugType>PdbOnly</DebugType>

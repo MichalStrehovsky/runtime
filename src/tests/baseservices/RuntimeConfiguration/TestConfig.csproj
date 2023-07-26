@@ -5,6 +5,9 @@
     <GCStressIncompatible>true</GCStressIncompatible>
     <UnloadabilityIncompatible>true</UnloadabilityIncompatible>
     <DisableProjectBuild Condition="'$(RuntimeFlavor)' == 'Mono'">true</DisableProjectBuild>
+
+    <!-- We don't use corerun in NativeAOT -->
+    <NativeAotIncompatible>true</NativeAotIncompatible>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="TestConfig.cs" />

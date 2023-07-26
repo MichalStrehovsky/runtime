@@ -3,6 +3,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <DebugType>Full</DebugType>
+
+    <!-- NativeAOT doesn't support non-System.Exception throws -->
+    <NativeAotIncompatible>true</NativeAotIncompatible>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="throw2dimarray_d.il" />

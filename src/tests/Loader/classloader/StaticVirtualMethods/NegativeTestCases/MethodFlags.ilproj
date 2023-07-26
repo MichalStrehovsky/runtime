@@ -1,6 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.IL">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
+
+    <!-- NativeAOT doesn't detect all the invalid cases -->
+    <NativeAotIncompatible>true</NativeAotIncompatible>
   </PropertyGroup>
   <PropertyGroup>
     <DebugType>Full</DebugType>

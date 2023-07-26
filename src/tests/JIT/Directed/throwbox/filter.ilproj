@@ -2,6 +2,9 @@
   <PropertyGroup>
     <DebugType>PdbOnly</DebugType>
     <Optimize>True</Optimize>
+
+    <!-- NativeAOT doesn't support non-System.Exception throws -->
+    <NativeAotIncompatible>true</NativeAotIncompatible>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="filter.il" />

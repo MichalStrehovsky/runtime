@@ -13,6 +13,7 @@
     <UnloadabilityIncompatible>true</UnloadabilityIncompatible>
     <!-- https://github.com/dotnet/runtime/issues/53321 -->
     <JitOptimizationSensitive Condition="'$(TargetArchitecture)' == 'arm64' And '$(TargetOS)' == 'osx'">true</JitOptimizationSensitive>
+    <NativeAotIncompatible>true</NativeAotIncompatible>
   </PropertyGroup>
   <PropertyGroup>
     <DebugType>Full</DebugType>

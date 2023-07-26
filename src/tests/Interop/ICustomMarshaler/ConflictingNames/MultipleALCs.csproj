@@ -4,6 +4,9 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <UnloadabilityIncompatible>true</UnloadabilityIncompatible>
     <GCStressIncompatible>true</GCStressIncompatible>
+
+    <!-- AssemblyLoadContext doesn't make sense on NativeAOT -->
+    <NativeAotIncompatible>true</NativeAotIncompatible>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="RunInALC.cs" />
