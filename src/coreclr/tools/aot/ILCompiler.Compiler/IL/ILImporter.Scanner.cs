@@ -999,15 +999,20 @@ namespace Internal.IL
                     && ((field.IsStatic && _methodIL.OwningMethod.IsStaticConstructor)
                         || (!field.IsStatic && _methodIL.OwningMethod.IsConstructor));
 
+                FieldDesc fieldToReport = canonField;
+                DefType fieldOwningType = canonField.OwningType;
+                TypeDesc canonFieldOwningType = fieldOwningType.ConvertToCanonForm(CanonicalFormKind.Specific);
+                if (fieldOwningType != canonFieldOwningType)
+                    fieldToReport = _factory.TypeSystemContext.GetFieldForInstantiatedType(fieldToReport.GetTypicalFieldDefinition(), (InstantiatedType)canonFieldOwningType);
+
                 if (!isInitOnlyWrite)
                 {
-                    FieldDesc fieldToReport = canonField;
-                    DefType fieldOwningType = canonField.OwningType;
-                    TypeDesc canonFieldOwningType = fieldOwningType.ConvertToCanonForm(CanonicalFormKind.Specific);
-                    if (fieldOwningType != canonFieldOwningType)
-                        fieldToReport = _factory.TypeSystemContext.GetFieldForInstantiatedType(fieldToReport.GetTypicalFieldDefinition(), (InstantiatedType)canonFieldOwningType);
-
                     _dependencies.Add(_factory.NotReadOnlyField(fieldToReport), "Field written outside initializer");
+                }
+
+                if (field.IsStatic)
+                {
+                    _dependencies.Add(_factory.WrittenStaticField(fieldToReport), "Written static field");
                 }
             }
 

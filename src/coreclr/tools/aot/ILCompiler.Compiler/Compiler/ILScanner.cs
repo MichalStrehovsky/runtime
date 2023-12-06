@@ -831,20 +831,26 @@ namespace ILCompiler
 
         private sealed class ScannedReadOnlyPolicy : ReadOnlyFieldPolicy
         {
-            private HashSet<FieldDesc> _writtenFields = new();
+            private HashSet<FieldDesc> _notReadOnlyFields = new();
+            private HashSet<FieldDesc> _writtenStaticFields = new();
 
             public ScannedReadOnlyPolicy(ImmutableArray<DependencyNodeCore<NodeFactory>> markedNodes)
             {
                 foreach (var node in markedNodes)
                 {
-                    if (node is NotReadOnlyFieldNode writtenField)
+                    if (node is NotReadOnlyFieldNode notReadOnlyField)
                     {
-                        _writtenFields.Add(writtenField.Field);
+                        _notReadOnlyFields.Add(notReadOnlyField.Field);
+                    }
+
+                    if (node is WrittenStaticFieldNode writtenStaticField)
+                    {
+                        _writtenStaticFields.Add(writtenStaticField.Field);
                     }
                 }
             }
 
-            public override bool IsReadOnly(FieldDesc field)
+            private static FieldDesc ConvertToCanon(FieldDesc field)
             {
                 FieldDesc typicalField = field.GetTypicalFieldDefinition();
                 if (field != typicalField)
@@ -854,8 +860,19 @@ namespace ILCompiler
                     if (owningType != canonOwningType)
                         field = field.Context.GetFieldForInstantiatedType(typicalField, canonOwningType);
                 }
+                return field;
+            }
 
-                return !_writtenFields.Contains(field);
+            public override bool IsReadOnly(FieldDesc field)
+            {
+                return !_notReadOnlyFields.Contains(ConvertToCanon(field));
+            }
+
+            public override bool IsNeverWrittenAtRuntime(FieldDesc field)
+            {
+                Debug.Assert(field.IsStatic);
+                Debug.Assert(!field.HasRva);
+                return !_writtenStaticFields.Contains(ConvertToCanon(field));
             }
         }
     }

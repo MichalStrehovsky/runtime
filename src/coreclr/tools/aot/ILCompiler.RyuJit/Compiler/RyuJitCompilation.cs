@@ -62,6 +62,8 @@ namespace ILCompiler
 
         public bool IsInitOnly(FieldDesc field) => _readOnlyFieldPolicy.IsReadOnly(field);
 
+        public bool IsNeverWrittenStaticField(FieldDesc field) => _readOnlyFieldPolicy.IsNeverWrittenAtRuntime(field);
+
         public override IEETypeNode NecessaryTypeSymbolIfPossible(TypeDesc type)
         {
             // RyuJIT makes assumptions around the value of these symbols - in particular, it assumes
