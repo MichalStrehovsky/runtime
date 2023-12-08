@@ -68,11 +68,15 @@ namespace ILCompiler
     {
         private readonly ILProvider _nestedILProvider;
         private readonly SubstitutionProvider _substitutionProvider;
+        private readonly ReadOnlyFieldPolicy _readOnlyFieldPolicy;
+        private readonly PreinitializationManager _preinitializationManager;
 
-        public SubstitutedILProvider(ILProvider nestedILProvider, SubstitutionProvider substitutionProvider)
+        public SubstitutedILProvider(ILProvider nestedILProvider, SubstitutionProvider substitutionProvider, ReadOnlyFieldPolicy readOnlyFieldPolicy, PreinitializationManager preinitializationManager)
         {
             _nestedILProvider = nestedILProvider;
             _substitutionProvider = substitutionProvider;
+            _readOnlyFieldPolicy = readOnlyFieldPolicy;
+            _preinitializationManager = preinitializationManager;
         }
 
         public override MethodIL GetMethodIL(MethodDesc method)
@@ -329,14 +333,17 @@ namespace ILCompiler
                         || opcode == ILOpcode.brtrue || opcode == ILOpcode.brtrue_s)
                     {
                         int destination = reader.ReadBranchDestination(opcode);
-                        if (!TryGetConstantArgument(method, methodBytes, flags, offset, 0, out int constant))
+                        if (!TryGetConstantArgument(method, methodBytes, flags, offset, 0, out StackValue constant)
+                            || constant.Kind is not StackValueKind.Int32 or StackValueKind.ObjRef)
                         {
                             // Can't get the constant - both branches are live.
                             offsetsToVisit.Push(destination);
                             offsetsToVisit.Push(reader.Offset);
                         }
-                        else if ((constant == 0 && (opcode == ILOpcode.brfalse || opcode == ILOpcode.brfalse_s))
-                            || (constant != 0 && (opcode == ILOpcode.brtrue || opcode == ILOpcode.brtrue_s)))
+                        else if ((((constant.Kind == StackValueKind.Int32 && (int)constant.Value == 0) || (constant.Kind == StackValueKind.ObjRef && constant.Value == null))
+                                && (opcode == ILOpcode.brfalse || opcode == ILOpcode.brfalse_s))
+                            || (((constant.Kind == StackValueKind.Int32 && (int)constant.Value != 0) || (constant.Kind == StackValueKind.ObjRef && constant.Value != null))
+                                && (opcode == ILOpcode.brtrue || opcode == ILOpcode.brtrue_s)))
                         {
                             // Only the "branch taken" is live.
                             // The fallthrough marks the beginning of a visible (but not live) basic block.
@@ -355,15 +362,17 @@ namespace ILCompiler
                         || opcode == ILOpcode.bne_un || opcode == ILOpcode.bne_un_s)
                     {
                         int destination = reader.ReadBranchDestination(opcode);
-                        if (!TryGetConstantArgument(method, methodBytes, flags, offset, 0, out int left)
-                            || !TryGetConstantArgument(method, methodBytes, flags, offset, 1, out int right))
+                        if (!TryGetConstantArgument(method, methodBytes, flags, offset, 0, out StackValue left)
+                            || !TryGetConstantArgument(method, methodBytes, flags, offset, 1, out StackValue right)
+                            || left.Kind != StackValueKind.Int32
+                            || right.Kind != StackValueKind.Int32)
                         {
                             // Can't get the constant - both branches are live.
                             offsetsToVisit.Push(destination);
                             offsetsToVisit.Push(reader.Offset);
                         }
-                        else if ((left == right && (opcode == ILOpcode.beq || opcode == ILOpcode.beq_s)
-                            || (left != right) && (opcode == ILOpcode.bne_un || opcode == ILOpcode.bne_un_s)))
+                        else if (((int)left.Value == (int)right.Value && (opcode == ILOpcode.beq || opcode == ILOpcode.beq_s))
+                            || (((int)left.Value != (int)right.Value) && (opcode == ILOpcode.bne_un || opcode == ILOpcode.bne_un_s)))
                         {
                             // Only the "branch taken" is live.
                             // The fallthrough marks the beginning of a visible (but not live) basic block.
@@ -566,11 +575,11 @@ namespace ILCompiler
             return new SubstitutedMethodIL(method.GetMethodILDefinition(), newBody, newEHRegions.ToArray(), debugInfo, newStrings.ToArray());
         }
 
-        private bool TryGetConstantArgument(MethodIL methodIL, byte[] body, OpcodeFlags[] flags, int offset, int argIndex, out int constant)
+        private bool TryGetConstantArgument(MethodIL methodIL, byte[] body, OpcodeFlags[] flags, int offset, int argIndex, out StackValue constant)
         {
             if ((flags[offset] & OpcodeFlags.BasicBlockStart) != 0)
             {
-                constant = 0;
+                constant = default;
                 return false;
             }
 
@@ -590,7 +599,7 @@ namespace ILCompiler
                         if (substitution != null && substitution.Value is int
                             && (opcode != ILOpcode.callvirt || !method.IsVirtual))
                         {
-                            constant = (int)substitution.Value;
+                            constant = new StackValue(StackValueKind.Int32, (int)substitution.Value);
                             return true;
                         }
                         else if (method.IsIntrinsic && method.Name is "op_Inequality" or "op_Equality"
@@ -602,7 +611,7 @@ namespace ILCompiler
                         }
                         else
                         {
-                            constant = 0;
+                            constant = default;
                             return false;
                         }
                     }
@@ -623,12 +632,12 @@ namespace ILCompiler
                         object substitution = _substitutionProvider.GetSubstitution(field);
                         if (substitution is int)
                         {
-                            constant = (int)substitution;
+                            constant = new StackValue(StackValueKind.Int32, (int)substitution);
                             return true;
                         }
                         else
                         {
-                            constant = 0;
+                            constant = default;
                             return false;
                         }
                     }
@@ -639,7 +648,7 @@ namespace ILCompiler
                 {
                     if (argIndex == 0)
                     {
-                        constant = opcode - ILOpcode.ldc_i4_0;
+                        constant = new StackValue(StackValueKind.Int32, opcode - ILOpcode.ldc_i4_0);
                         return true;
                     }
 
@@ -649,7 +658,7 @@ namespace ILCompiler
                 {
                     if (argIndex == 0)
                     {
-                        constant = (int)reader.ReadILUInt32();
+                        constant = new StackValue(StackValueKind.Int32, (int)reader.ReadILUInt32());
                         return true;
                     }
 
@@ -659,7 +668,7 @@ namespace ILCompiler
                 {
                     if (argIndex == 0)
                     {
-                        constant = (int)(sbyte)reader.ReadILByte();
+                        constant = new StackValue(StackValueKind.Int32, (int)(sbyte)reader.ReadILByte());
                         return true;
                     }
 
@@ -699,7 +708,7 @@ namespace ILCompiler
                         }
                         else
                         {
-                            constant = 0;
+                            constant = default;
                             return false;
                         }
                     }
@@ -708,26 +717,28 @@ namespace ILCompiler
                 {
                     if (argIndex == 0)
                     {
-                        if (!TryGetConstantArgument(methodIL, body, flags, currentOffset, 0, out int left)
-                                || !TryGetConstantArgument(methodIL, body, flags, currentOffset, 1, out int right))
+                        if (!TryGetConstantArgument(methodIL, body, flags, currentOffset, 0, out StackValue left)
+                            || !TryGetConstantArgument(methodIL, body, flags, currentOffset, 1, out StackValue right)
+                            || left.Kind != StackValueKind.Int32
+                            || right.Kind != StackValueKind.Int32)
                         {
-                            constant = 0;
+                            constant = default;
                             return false;
                         }
 
-                        constant = left == right ? 1 : 0;
+                        constant = new StackValue(StackValueKind.Int32, (int)left.Value == (int)right.Value ? 1 : 0);
                         return true;
                     }
 
                     // If we knew where the arguments to this end, we could resume looking from there.
                     // Punting for now.
                     Debug.Assert(argIndex != 0);
-                    constant = 0;
+                    constant = default;
                     return false;
                 }
                 else
                 {
-                    constant = 0;
+                    constant = default;
                     return false;
                 }
 
@@ -735,7 +746,7 @@ namespace ILCompiler
                     break;
             }
 
-            constant = 0;
+            constant = default;
             return false;
         }
     }
@@ -762,7 +773,7 @@ namespace ILCompiler
 
     public partial class SubstitutedILProvider : ILProvider
     {
-        private static bool TryExpandTypeEquality(MethodIL methodIL, byte[] body, OpcodeFlags[] flags, int offset, string op, out int constant)
+        private static bool TryExpandTypeEquality(MethodIL methodIL, byte[] body, OpcodeFlags[] flags, int offset, string op, out StackValue constant)
         {
             // We expect to see a sequence:
             // ldtoken Foo
@@ -770,7 +781,7 @@ namespace ILCompiler
             // ldtoken Bar
             // call GetTypeFromHandle
             // -> offset points here
-            constant = 0;
+            constant = default;
             const int SequenceLength = 20;
             if (offset < SequenceLength)
                 return false;
@@ -804,10 +815,10 @@ namespace ILCompiler
             if (!equality.HasValue)
                 return false;
 
-            constant = equality.Value ? 1 : 0;
+            constant = new StackValue(StackValueKind.Int32, equality.Value ? 1 : 0);
 
             if (op == "op_Inequality")
-                constant ^= 1;
+                constant = new StackValue(StackValueKind.Int32, (int)constant.Value ^ 1);
 
             return true;
 
@@ -841,6 +852,14 @@ namespace ILCompiler
 
                 return true;
             }
+        }
+
+        private struct StackValue
+        {
+            public readonly StackValueKind Kind;
+            public readonly object Value;
+            public StackValue(StackValueKind kind, object value)
+                => (Kind, Value) = (kind, value);
         }
 
         private sealed class SubstitutedMethodIL : MethodIL

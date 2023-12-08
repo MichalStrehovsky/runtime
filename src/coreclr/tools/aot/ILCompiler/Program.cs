@@ -368,7 +368,30 @@ namespace ILCompiler
             }
 
             SubstitutionProvider substitutionProvider = new SubstitutionProvider(logger, featureSwitches, substitutions);
-            ilProvider = new SubstitutedILProvider(ilProvider, substitutionProvider);
+
+
+            // //// //////////
+            // TODO: Preinit managed now can't see substitions!
+            /////////////////////
+
+            ReadOnlyFieldPolicy readOnlyFieldPolicy = new StaticReadOnlyFieldPolicy();
+
+            // Enable static data preinitialization in optimized builds.
+            bool preinitStatics = Get(_command.PreinitStatics) ||
+                (_command.OptimizationMode != OptimizationMode.None && !multiFile);
+            preinitStatics &= !Get(_command.NoPreinitStatics);
+
+            TypePreinit.TypePreinitializationPolicy preinitPolicy = preinitStatics ?
+                new TypePreinit.TypeLoaderAwarePreinitializationPolicy() : new TypePreinit.DisabledPreinitializationPolicy();
+
+            var preinitManager = new PreinitializationManager(typeSystemContext, compilationGroup, ilProvider, preinitPolicy, readOnlyFieldPolicy);
+
+            ILProvider unsubstitutedILProvider = ilProvider;
+            ilProvider = new SubstitutedILProvider(ilProvider, substitutionProvider, readOnlyFieldPolicy, preinitManager);
+
+            builder
+                .UseILProvider(ilProvider)
+                .UsePreinitializationManager(preinitManager);
 
             CompilerGeneratedState compilerGeneratedState = new CompilerGeneratedState(ilProvider, logger);
 
@@ -427,20 +450,7 @@ namespace ILCompiler
                     Get(_command.SatelliteFilePaths));
 
             InteropStateManager interopStateManager = new InteropStateManager(typeSystemContext.GeneratedAssembly);
-            InteropStubManager interopStubManager = new UsageBasedInteropStubManager(interopStateManager, pinvokePolicy, logger);
-
-            // Enable static data preinitialization in optimized builds.
-            bool preinitStatics = Get(_command.PreinitStatics) ||
-                (_command.OptimizationMode != OptimizationMode.None && !multiFile);
-            preinitStatics &= !Get(_command.NoPreinitStatics);
-
-            TypePreinit.TypePreinitializationPolicy preinitPolicy = preinitStatics ?
-                new TypePreinit.TypeLoaderAwarePreinitializationPolicy() : new TypePreinit.DisabledPreinitializationPolicy();
-
-            var preinitManager = new PreinitializationManager(typeSystemContext, compilationGroup, ilProvider, preinitPolicy, new StaticReadOnlyFieldPolicy());
-            builder
-                .UseILProvider(ilProvider)
-                .UsePreinitializationManager(preinitManager);
+            InteropStubManager interopStubManager = new UsageBasedInteropStubManager(interopStateManager, pinvokePolicy, logger);            
 
 #if DEBUG
             List<TypeDesc> scannerConstructedTypes = null;
@@ -510,16 +520,20 @@ namespace ILCompiler
                 // have answers for because we didn't scan the entire method.
                 builder.UseMethodImportationErrorProvider(scanResults.GetMethodImportationErrorProvider());
 
+                readOnlyFieldPolicy = scanResults.GetReadOnlyFieldPolicy();
+
                 // If we're doing preinitialization, use a new preinitialization manager that
                 // has the whole program view.
                 if (preinitStatics)
                 {
-                    var readOnlyFieldPolicy = scanResults.GetReadOnlyFieldPolicy();
                     preinitManager = new PreinitializationManager(typeSystemContext, compilationGroup, ilProvider, scanResults.GetPreinitializationPolicy(),
                         readOnlyFieldPolicy);
                     builder.UsePreinitializationManager(preinitManager)
                         .UseReadOnlyFieldPolicy(readOnlyFieldPolicy);
                 }
+
+                ilProvider = new SubstitutedILProvider(unsubstitutedILProvider, substitutionProvider, readOnlyFieldPolicy, preinitManager);
+                builder.UseILProvider(ilProvider);
 
                 // If we have a scanner, we can inline threadstatics storage using the information we collected at scanning time.
                 if (!Get(_command.NoInlineTls) &&
