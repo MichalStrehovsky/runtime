@@ -911,10 +911,35 @@ namespace ILCompiler
                 rootedCctorContexts.Add(cctorContext.Type);
             }
 
+            var canonFormToConcreteForm = new Dictionary<TypeDesc, TypeDesc>();
+            foreach (TypeDesc t in GetTypesWithConstructedEETypes())
+            {
+                TypeDesc canon = t.ConvertToCanonForm(CanonicalFormKind.Specific);
+                if (t != canon)
+                    canonFormToConcreteForm.TryAdd(canon, t);
+            }
+
+            foreach (TypeDesc t in GetTypesWithEETypes())
+            {
+                TypeDesc canon = t.ConvertToCanonForm(CanonicalFormKind.Specific);
+                if (t != canon)
+                    canonFormToConcreteForm.TryAdd(canon, t);
+            }
+
+            var templateTypes = new HashSet<TypeDesc>();
+            foreach (TypeDesc t in GetTypesWithEETypes())
+            {
+                if (t.IsCanonicalSubtype(CanonicalFormKind.Any))
+                {
+                    if (canonFormToConcreteForm.TryGetValue(t, out TypeDesc template))
+                        templateTypes.Add(template);
+                }
+            }
+
             return new AnalysisBasedMetadataManager(
                 _typeSystemContext, _blockingPolicy, _resourceBlockingPolicy, _metadataLogFile, _stackTraceEmissionPolicy, _dynamicInvokeThunkGenerationPolicy,
                 _modulesWithMetadata, _typesWithForcedEEType, reflectableTypes.ToEnumerable(), reflectableMethods.ToEnumerable(),
-                reflectableFields.ToEnumerable(), _customAttributesWithMetadata, rootedCctorContexts, _options);
+                reflectableFields.ToEnumerable(), _customAttributesWithMetadata, rootedCctorContexts, templateTypes, _options);
         }
 
         private void AddDataflowDependency(ref DependencyList dependencies, NodeFactory factory, MethodIL methodIL, string reason)

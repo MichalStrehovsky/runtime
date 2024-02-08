@@ -549,6 +549,10 @@ namespace ILCompiler.DependencyAnalysis
                 }
                 else if (type.IsCanonicalSubtype(CanonicalFormKind.Any))
                 {
+                    TypeDesc templateType = MetadataManager.GetTemplateType(type);
+                    if (templateType != type)
+                        return NecessaryTypeSymbol(templateType);
+
                     return new NecessaryCanonicalEETypeNode(this, type);
                 }
                 else
@@ -572,6 +576,10 @@ namespace ILCompiler.DependencyAnalysis
             {
                 if (type.IsCanonicalSubtype(CanonicalFormKind.Any))
                 {
+                    TypeDesc templateType = MetadataManager.GetTemplateType(type);
+                    if (templateType != type)
+                        return ConstructedTypeSymbol(templateType);
+
                     return new CanonicalEETypeNode(this, type);
                 }
                 else

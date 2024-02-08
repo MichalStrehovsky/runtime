@@ -992,7 +992,8 @@ namespace ILCompiler
 
         internal bool TypeGeneratesEEType(TypeDesc type)
         {
-            return _typesWithEETypesGenerated.Contains(type);
+            return _typesWithEETypesGenerated.Contains(type)
+                || (type.IsCanonicalSubtype(CanonicalFormKind.Any) && _typesWithEETypesGenerated.Contains(GetTemplateType(type)));
         }
 
         internal IEnumerable<TypeDesc> GetTypesWithEETypes()
@@ -1150,6 +1151,15 @@ namespace ILCompiler
 
         public virtual void NoteOverridingMethod(MethodDesc baseMethod, MethodDesc overridingMethod)
         {
+        }
+
+        /// <summary>
+        /// Returns the type whose MethodTable should be used to represent the given canonical form.
+        /// </summary>
+        public virtual TypeDesc GetTemplateType(TypeDesc type)
+        {
+            Debug.Assert(type.IsCanonicalSubtype(CanonicalFormKind.Any));
+            return type;
         }
     }
 

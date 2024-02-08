@@ -66,8 +66,6 @@ namespace ILCompiler.DependencyAnalysis
             List<CombinedDependencyListEntry> dynamicDependencies = new List<CombinedDependencyListEntry>();
 
             TypeDesc methodOwningType = _method.OwningType;
-            bool methodIsShared = _method.IsSharedByGenericInstantiations;
-
             TypeSystemContext context = _method.Context;
 
             for (int i = firstNode; i < markedNodes.Count; i++)
@@ -82,11 +80,16 @@ namespace ILCompiler.DependencyAnalysis
                 if (!potentialOverrideType.IsDefType || potentialOverrideType.IsInterface)
                     continue;
 
-                // If method is canonical, don't allow using it with non-canonical types - we can wait until
-                // we see the __Canon instantiation. If there isn't one, the canonical method wouldn't be useful anyway.
-                if (methodIsShared &&
-                    potentialOverrideType.ConvertToCanonForm(CanonicalFormKind.Specific) != potentialOverrideType)
+                // Compile time performance optimization: for types that have shared forms, only
+                // look at the type loader template type. We're guaranteed to have the template
+                // type in the system and the results of analyzing other canonically equivalent
+                // forms are going to be the same so there's no point in analyzing them.
+                TypeDesc potentialOverrideCanonicalType = potentialOverrideType.ConvertToCanonForm(CanonicalFormKind.Specific);
+                if (potentialOverrideCanonicalType != potentialOverrideType
+                    && factory.MetadataManager.GetTemplateType(potentialOverrideCanonicalType) != potentialOverrideType)
+                {
                     continue;
+                }
 
                 // If this is an interface gvm, look for types that implement the interface
                 // and other instantantiations that have the same canonical form.

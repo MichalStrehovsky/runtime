@@ -30,13 +30,15 @@ namespace ILCompiler
         private readonly Dictionary<FieldDesc, MetadataCategory> _reflectableFields = new Dictionary<FieldDesc, MetadataCategory>();
         private readonly HashSet<ReflectableCustomAttribute> _reflectableAttributes = new HashSet<ReflectableCustomAttribute>();
 
+        private readonly Dictionary<TypeDesc, TypeDesc> _templateTypes = new Dictionary<TypeDesc, TypeDesc>();
+
         public AnalysisBasedMetadataManager(CompilerTypeSystemContext typeSystemContext)
             : this(typeSystemContext, new FullyBlockedMetadataBlockingPolicy(),
                 new FullyBlockedManifestResourceBlockingPolicy(), null, new NoStackTraceEmissionPolicy(),
                 new NoDynamicInvokeThunkGenerationPolicy(), Array.Empty<ModuleDesc>(), Array.Empty<TypeDesc>(),
                 Array.Empty<ReflectableEntity<TypeDesc>>(), Array.Empty<ReflectableEntity<MethodDesc>>(),
                 Array.Empty<ReflectableEntity<FieldDesc>>(), Array.Empty<ReflectableCustomAttribute>(),
-                Array.Empty<MetadataType>(), default)
+                Array.Empty<MetadataType>(), Array.Empty<TypeDesc>(), default)
         {
         }
 
@@ -54,6 +56,7 @@ namespace ILCompiler
             IEnumerable<ReflectableEntity<FieldDesc>> reflectableFields,
             IEnumerable<ReflectableCustomAttribute> reflectableAttributes,
             IEnumerable<MetadataType> rootedCctorContexts,
+            IEnumerable<TypeDesc> templateTypes,
             MetadataManagerOptions options)
             : base(typeSystemContext, blockingPolicy, resourceBlockingPolicy, logFile, stackTracePolicy, invokeThunkGenerationPolicy, options)
         {
@@ -124,6 +127,11 @@ namespace ILCompiler
                     == (GetMetadataCategory(refField.Entity) & MetadataCategory.Description));
             }
 #endif
+
+            foreach (TypeDesc templateType in templateTypes)
+            {
+                _templateTypes.Add(templateType.ConvertToCanonForm(CanonicalFormKind.Specific), templateType);
+            }
         }
 
         public override IEnumerable<ModuleDesc> GetCompilationModulesWithMetadata()
@@ -174,6 +182,15 @@ namespace ILCompiler
                 if ((pair.Value & MetadataCategory.RuntimeMapping) != 0)
                     yield return pair.Key;
             }
+        }
+
+        public override TypeDesc GetTemplateType(TypeDesc type)
+        {
+            Debug.Assert(type.IsCanonicalSubtype(CanonicalFormKind.Any));
+            if (_templateTypes.TryGetValue(type, out TypeDesc template))
+                return template;
+
+            return type;
         }
 
         void ICompilationRootProvider.AddCompilationRoots(IRootingServiceProvider rootProvider)
