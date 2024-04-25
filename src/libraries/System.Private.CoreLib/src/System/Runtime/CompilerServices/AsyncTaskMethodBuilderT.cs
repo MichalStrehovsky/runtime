@@ -61,7 +61,7 @@ namespace System.Runtime.CompilerServices
         {
             try
             {
-                awaiter.OnCompleted(GetStateMachineBox(ref stateMachine, ref taskField).MoveNextAction);
+                awaiter.OnCompleted(GetStateMachineBoxLite(stateMachine, ref taskField).MoveNextAction);
             }
             catch (Exception e)
             {
@@ -89,7 +89,7 @@ namespace System.Runtime.CompilerServices
             where TAwaiter : ICriticalNotifyCompletion
             where TStateMachine : IAsyncStateMachine
         {
-            IAsyncStateMachineBox box = GetStateMachineBox(ref stateMachine, ref taskField);
+            IAsyncStateMachineBox box = GetStateMachineBoxLite(stateMachine, ref taskField);
             AwaitUnsafeOnCompleted(ref awaiter, box);
         }
 
@@ -143,6 +143,72 @@ namespace System.Runtime.CompilerServices
                     Threading.Tasks.Task.ThrowAsync(e, targetContext: null);
                 }
             }
+        }
+
+        private static AsyncStateMachineBox<IAsyncStateMachine> GetStateMachineBoxLite(
+            IAsyncStateMachine stateMachine,
+            [NotNull] ref Task<TResult>? taskField)
+        {
+            ExecutionContext? currentContext = ExecutionContext.Capture();
+
+            if (taskField is AsyncStateMachineBox<IAsyncStateMachine> weaklyTypedBox)
+            {
+                // If this is the first await, we won't yet have a state machine, so store it.
+                if (weaklyTypedBox.StateMachine == null)
+                {
+                    Debugger.NotifyOfCrossThreadDependency(); // same explanation as with usage below
+                    weaklyTypedBox.StateMachine = stateMachine;
+                }
+
+                // Update the context.  This only happens with a debugger, so no need to spend
+                // extra IL checking for equality before doing the assignment.
+                weaklyTypedBox.Context = currentContext;
+                return weaklyTypedBox;
+            }
+
+            // Alert a listening debugger that we can't make forward progress unless it slips threads.
+            // If we don't do this, and a method that uses "await foo;" is invoked through funceval,
+            // we could end up hooking up a callback to push forward the async method's state machine,
+            // the debugger would then abort the funceval after it takes too long, and then continuing
+            // execution could result in another callback being hooked up.  At that point we have
+            // multiple callbacks registered to push the state machine, which could result in bad behavior.
+            Debugger.NotifyOfCrossThreadDependency();
+
+            // At this point, taskField should really be null, in which case we want to create the box.
+            // However, in a variety of debugger-related (erroneous) situations, it might be non-null,
+            // e.g. if the Task property is examined in a Watch window, forcing it to be lazily-initialized
+            // as a Task<TResult> rather than as an AsyncStateMachineBox.  The worst that happens in such
+            // cases is we lose the ability to properly step in the debugger, as the debugger uses that
+            // object's identity to track this specific builder/state machine.  As such, we proceed to
+            // overwrite whatever's there anyway, even if it's non-null.
+#if NATIVEAOT
+            // DebugFinalizableAsyncStateMachineBox looks like a small type, but it actually is not because
+            // it will have a copy of all the slots from its parent. It will add another hundred(s) bytes
+            // per each async method in NativeAOT binaries without adding much value. Avoid
+            // generating this extra code until a better solution is implemented.
+            var box = new AsyncStateMachineBox<IAsyncStateMachine>();
+#else
+            AsyncStateMachineBox<IAsyncStateMachine> box = AsyncMethodBuilderCore.TrackAsyncMethodCompletion ?
+                CreateDebugFinalizableAsyncStateMachineBox<IAsyncStateMachine>() :
+                new AsyncStateMachineBox<IAsyncStateMachine>();
+#endif
+            taskField = box; // important: this must be done before storing stateMachine into box.StateMachine!
+            box.StateMachine = stateMachine;
+            box.Context = currentContext;
+
+            // Log the creation of the state machine box object / task for this async method.
+            if (TplEventSource.Log.IsEnabled())
+            {
+                TplEventSource.Log.TraceOperationBegin(box.Id, "Async: " + stateMachine.GetType().Name, 0);
+            }
+
+            // And if async debugging is enabled, track the task.
+            if (Threading.Tasks.Task.s_asyncDebuggingEnabled)
+            {
+                Threading.Tasks.Task.AddToActiveTasks(box);
+            }
+
+            return box;
         }
 
         /// <summary>Gets the "boxed" state machine object.</summary>
