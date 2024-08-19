@@ -16,6 +16,19 @@ using MultiValue = ILLink.Shared.DataFlow.ValueSet<ILLink.Shared.DataFlow.Single
 // This is needed due to NativeAOT which doesn't enable nullable globally yet
 #nullable enable
 
+namespace ILLink.Shared
+{
+	internal static class DynamicallyAccessedMemberTypesEx
+	{
+		public const DynamicallyAccessedMemberTypes AllConstructors = (DynamicallyAccessedMemberTypes) 0x4000 | DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors;
+		public const DynamicallyAccessedMemberTypes AllMethods = (DynamicallyAccessedMemberTypes) 0x8000 | DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods;
+		public const DynamicallyAccessedMemberTypes AllFields = (DynamicallyAccessedMemberTypes) 0x10000 | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields;
+		public const DynamicallyAccessedMemberTypes AllNestedTypes = (DynamicallyAccessedMemberTypes) 0x20000 | DynamicallyAccessedMemberTypes.PublicNestedTypes | DynamicallyAccessedMemberTypes.NonPublicNestedTypes;
+		public const DynamicallyAccessedMemberTypes AllProperties = (DynamicallyAccessedMemberTypes) 0x40000 | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties;
+		public const DynamicallyAccessedMemberTypes AllEvents = (DynamicallyAccessedMemberTypes) 0x80000 | DynamicallyAccessedMemberTypes.PublicEvents | DynamicallyAccessedMemberTypes.NonPublicEvents;
+	}
+}
+
 namespace ILLink.Shared.TrimAnalysis
 {
 	[StructLayout (LayoutKind.Auto)] // A good way to avoid CS0282, we don't really care about field order
@@ -943,20 +956,38 @@ namespace ILLink.Shared.TrimAnalysis
 							if (valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes == DynamicallyAccessedMemberTypes.All)
 								propagatedMemberTypes = DynamicallyAccessedMemberTypes.All;
 							else {
+								if (valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypesEx.AllConstructors))
+									propagatedMemberTypes |= DynamicallyAccessedMemberTypesEx.AllConstructors;
+
 								// PublicConstructors are not propagated to base type
+
+								if (valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypesEx.AllEvents))
+									propagatedMemberTypes |= DynamicallyAccessedMemberTypesEx.AllEvents;
 
 								if (valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicEvents))
 									propagatedMemberTypes |= DynamicallyAccessedMemberTypes.PublicEvents;
 
+								if (valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypesEx.AllFields))
+									propagatedMemberTypes |= DynamicallyAccessedMemberTypesEx.AllFields;
+
 								if (valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicFields))
 									propagatedMemberTypes |= DynamicallyAccessedMemberTypes.PublicFields;
+
+								if (valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypesEx.AllMethods))
+									propagatedMemberTypes |= DynamicallyAccessedMemberTypesEx.AllMethods;
 
 								if (valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicMethods))
 									propagatedMemberTypes |= DynamicallyAccessedMemberTypes.PublicMethods;
 
+								if (valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypesEx.AllNestedTypes))
+									propagatedMemberTypes |= DynamicallyAccessedMemberTypesEx.AllNestedTypes;
+
 								// PublicNestedTypes are not propagated to base type
 
 								// PublicParameterlessConstructor is not propagated to base type
+
+								if (valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypesEx.AllProperties))
+									propagatedMemberTypes |= DynamicallyAccessedMemberTypesEx.AllProperties;
 
 								if (valueWithDynamicallyAccessedMembers.DynamicallyAccessedMemberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicProperties))
 									propagatedMemberTypes |= DynamicallyAccessedMemberTypes.PublicProperties;

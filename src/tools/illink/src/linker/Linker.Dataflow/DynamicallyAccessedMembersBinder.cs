@@ -30,42 +30,71 @@ namespace Mono.Linker
 
 			var declaredOnlyFlags = declaredOnly ? BindingFlags.DeclaredOnly : BindingFlags.Default;
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicConstructors)) {
+			bool allConstructors = memberTypes.HasFlag (DynamicallyAccessedMemberTypesEx.AllConstructors);
+			if (allConstructors) {
+				foreach (var c in typeDefinition.GetAllConstructorsOnTypeHierarchy (context, declaredOnly))
+					yield return c;
+			}
+
+			if (!allConstructors && memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicConstructors)) {
 				foreach (var c in typeDefinition.GetConstructorsOnType (filter: null, bindingFlags: BindingFlags.NonPublic))
 					yield return c;
 			}
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicConstructors)) {
+			if (!allConstructors && memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicConstructors)) {
 				foreach (var c in typeDefinition.GetConstructorsOnType (filter: null, bindingFlags: BindingFlags.Public))
 					yield return c;
 			}
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)) {
+			if (!allConstructors && memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)) {
 				foreach (var c in typeDefinition.GetConstructorsOnType (filter: m => m.IsPublic && !m.HasMetadataParameters ()))
 					yield return c;
 			}
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicMethods)) {
+			bool allMethods = memberTypes.HasFlag (DynamicallyAccessedMemberTypesEx.AllMethods);
+			if (allMethods) {
+				foreach (var m in typeDefinition.GetAllMethodsOnTypeHierarchy (context, declaredOnly))
+					yield return m;
+			}
+
+			if (!allMethods && memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicMethods)) {
 				foreach (var m in typeDefinition.GetMethodsOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
 					yield return m;
 			}
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicMethods)) {
+			if (!allMethods && memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicMethods)) {
 				foreach (var m in typeDefinition.GetMethodsOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
 					yield return m;
 			}
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicFields)) {
+			bool allFields = memberTypes.HasFlag (DynamicallyAccessedMemberTypesEx.AllFields);
+			if (allFields) {
+				foreach (var f in typeDefinition.GetAllFieldsOnTypeHierarchy (context, declaredOnly))
+					yield return f;
+			}
+
+			if (!allFields && memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicFields)) {
 				foreach (var f in typeDefinition.GetFieldsOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
 					yield return f;
 			}
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicFields)) {
+			if (!allFields && memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicFields)) {
 				foreach (var f in typeDefinition.GetFieldsOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
 					yield return f;
 			}
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicNestedTypes)) {
+			bool allNestedTypes = memberTypes.HasFlag (DynamicallyAccessedMemberTypesEx.AllNestedTypes);
+			if (allNestedTypes) {
+				foreach (var nested in typeDefinition.GetAllNestedTypesOnTypeHierarchy (context, declaredOnly)) {
+					yield return nested;
+					var members = new List<IMetadataTokenProvider> ();
+					nested.GetAllOnType (context, declaredOnly: false, members);
+					foreach (var m in members)
+						yield return m;
+				}
+			}
+
+			if (!allNestedTypes && memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicNestedTypes)) {
 				foreach (var nested in typeDefinition.GetNestedTypesOnType (context, filter: null, bindingFlags: BindingFlags.NonPublic)) {
 					yield return nested;
 					var members = new List<IMetadataTokenProvider> ();
@@ -75,7 +104,7 @@ namespace Mono.Linker
 				}
 			}
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicNestedTypes)) {
+			if (!allNestedTypes && memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicNestedTypes)) {
 				foreach (var nested in typeDefinition.GetNestedTypesOnType (context, filter: null, bindingFlags: BindingFlags.Public)) {
 					yield return nested;
 					var members = new List<IMetadataTokenProvider> ();
@@ -85,22 +114,34 @@ namespace Mono.Linker
 				}
 			}
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicProperties)) {
+			bool allProperties = memberTypes.HasFlag (DynamicallyAccessedMemberTypesEx.AllProperties);
+			if (allProperties) {
+				foreach (var p in typeDefinition.GetAllPropertiesOnTypeHierarchy (context, declaredOnly))
+					yield return p;
+			}
+
+			if (!allProperties && memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicProperties)) {
 				foreach (var p in typeDefinition.GetPropertiesOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
 					yield return p;
 			}
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicProperties)) {
+			if (!allProperties && memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicProperties)) {
 				foreach (var p in typeDefinition.GetPropertiesOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
 					yield return p;
 			}
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicEvents)) {
+			bool allEvents = memberTypes.HasFlag (DynamicallyAccessedMemberTypesEx.AllEvents);
+			if (allEvents) {
+				foreach (var e in typeDefinition.GetAllEventsOnTypeHierarchy (context, declaredOnly))
+					yield return e;
+			}
+
+			if (!allEvents && memberTypes.HasFlag (DynamicallyAccessedMemberTypes.NonPublicEvents)) {
 				foreach (var e in typeDefinition.GetEventsOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
 					yield return e;
 			}
 
-			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicEvents)) {
+			if (!allEvents && memberTypes.HasFlag (DynamicallyAccessedMemberTypes.PublicEvents)) {
 				foreach (var e in typeDefinition.GetEventsOnTypeHierarchy (context, filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
 					yield return e;
 			}
@@ -108,6 +149,23 @@ namespace Mono.Linker
 			if (memberTypes.HasFlag (DynamicallyAccessedMemberTypes.Interfaces)) {
 				foreach (var i in typeDefinition.GetAllInterfaceImplementations (context, declaredOnly))
 					yield return i;
+			}
+		}
+
+		public static IEnumerable<MethodDefinition> GetAllConstructorsOnTypeHierarchy (this TypeReference thisType, LinkContext context, bool declaredOnly)
+		{
+			TypeDefinition? type = thisType.ResolveToTypeDefinition (context);
+			while (type != null) {
+				foreach (var method in type.Methods) {
+					if (!method.IsConstructor)
+						continue;
+					yield return method;
+				}
+
+				if (declaredOnly)
+					yield break;
+
+				type = context.TryResolve (type.BaseType);
 			}
 		}
 
@@ -133,6 +191,24 @@ namespace Mono.Linker
 					continue;
 
 				yield return method;
+			}
+		}
+
+		public static IEnumerable<MethodDefinition> GetAllMethodsOnTypeHierarchy(this TypeReference thisType, LinkContext context, bool declaredOnly)
+		{
+			TypeDefinition? type = thisType.ResolveToTypeDefinition (context);
+			while (type != null) {
+				foreach (var method in type.Methods) {
+					// Ignore constructors as those are not considered methods from a reflection's point of view
+					if (method.IsConstructor)
+						continue;
+					yield return method;
+				}
+
+				if (declaredOnly)
+					yield break;
+
+				type = context.TryResolve (type.BaseType);
 			}
 		}
 
@@ -180,6 +256,21 @@ namespace Mono.Linker
 			}
 		}
 
+		public static IEnumerable<FieldDefinition> GetAllFieldsOnTypeHierarchy (this TypeDefinition thisType, LinkContext context, bool declaredOnly)
+		{
+			TypeDefinition? type = thisType;
+			while (type != null) {
+				foreach (var field in type.Fields) {
+					yield return field;
+				}
+
+				if (declaredOnly)
+					yield break;
+
+				type = context.TryResolve (type.BaseType);
+			}
+		}
+
 		public static IEnumerable<FieldDefinition> GetFieldsOnTypeHierarchy (this TypeDefinition thisType, LinkContext context, Func<FieldDefinition, bool>? filter, BindingFlags? bindingFlags = BindingFlags.Default)
 		{
 			TypeDefinition? type = thisType;
@@ -220,6 +311,21 @@ namespace Mono.Linker
 			}
 		}
 
+		public static IEnumerable<TypeDefinition> GetAllNestedTypesOnTypeHierarchy (this TypeDefinition thisType, LinkContext context, bool declaredOnly)
+		{
+			TypeDefinition? type = thisType;
+			while (type != null) {
+				foreach (var nestedType in type.NestedTypes) {
+					yield return nestedType;
+				}
+
+				if (declaredOnly)
+					yield break;
+
+				type = context.TryResolve (type.BaseType);
+			}
+		}
+
 		public static IEnumerable<TypeDefinition> GetNestedTypesOnType (this TypeReference typeRef, LinkContext context, Func<TypeDefinition, bool>? filter, BindingFlags? bindingFlags = BindingFlags.Default)
 		{
 			if (typeRef.ResolveToTypeDefinition (context) is not TypeDefinition type)
@@ -240,6 +346,21 @@ namespace Mono.Linker
 				}
 
 				yield return nestedType;
+			}
+		}
+
+		public static IEnumerable<PropertyDefinition> GetAllPropertiesOnTypeHierarchy (this TypeDefinition thisType, LinkContext context, bool declaredOnly)
+		{
+			TypeDefinition? type = thisType;
+			while (type != null) {
+				foreach (var property in type.Properties) {
+					yield return property;
+				}
+
+				if (declaredOnly)
+					yield break;
+
+				type = context.TryResolve (type.BaseType);
 			}
 		}
 
@@ -289,6 +410,21 @@ namespace Mono.Linker
 
 				type = context.TryResolve (type.BaseType);
 				onBaseType = true;
+			}
+		}
+
+		public static IEnumerable<EventDefinition> GetAllEventsOnTypeHierarchy (this TypeDefinition thisType, LinkContext context, bool declaredOnly)
+		{
+			TypeDefinition? type = thisType;
+			while (type != null) {
+				foreach (var @event in type.Events) {
+					yield return @event;
+				}
+
+				if (declaredOnly)
+					yield break;
+
+				type = context.TryResolve (type.BaseType);
 			}
 		}
 

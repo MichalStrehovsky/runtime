@@ -9,6 +9,23 @@ using System.Reflection;
 using Internal.TypeSystem;
 using Internal.TypeSystem.Ecma;
 
+using ILLink.Shared;
+
+#if READYTORUN
+namespace ILLink.Shared
+{
+	internal static class DynamicallyAccessedMemberTypesEx
+	{
+		public const DynamicallyAccessedMemberTypes AllConstructors = (DynamicallyAccessedMemberTypes) 0x4000 | DynamicallyAccessedMemberTypes.PublicConstructors | DynamicallyAccessedMemberTypes.NonPublicConstructors;
+		public const DynamicallyAccessedMemberTypes AllMethods = (DynamicallyAccessedMemberTypes) 0x8000 | DynamicallyAccessedMemberTypes.PublicMethods | DynamicallyAccessedMemberTypes.NonPublicMethods;
+		public const DynamicallyAccessedMemberTypes AllFields = (DynamicallyAccessedMemberTypes) 0x10000 | DynamicallyAccessedMemberTypes.PublicFields | DynamicallyAccessedMemberTypes.NonPublicFields;
+		public const DynamicallyAccessedMemberTypes AllNestedTypes = (DynamicallyAccessedMemberTypes) 0x20000 | DynamicallyAccessedMemberTypes.PublicNestedTypes | DynamicallyAccessedMemberTypes.NonPublicNestedTypes;
+		public const DynamicallyAccessedMemberTypes AllProperties = (DynamicallyAccessedMemberTypes) 0x40000 | DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.NonPublicProperties;
+		public const DynamicallyAccessedMemberTypes AllEvents = (DynamicallyAccessedMemberTypes) 0x80000 | DynamicallyAccessedMemberTypes.PublicEvents | DynamicallyAccessedMemberTypes.NonPublicEvents;
+	}
+}
+#endif
+
 namespace ILCompiler.Dataflow
 {
     internal static class DynamicallyAccessedMembersBinder
@@ -32,49 +49,83 @@ namespace ILCompiler.Dataflow
 
             var declaredOnlyFlags = declaredOnly ? BindingFlags.DeclaredOnly : BindingFlags.Default;
 
-            if (memberTypes.HasFlag(DynamicallyAccessedMemberTypes.NonPublicConstructors))
+            bool allConstructors = memberTypes.HasFlag(DynamicallyAccessedMemberTypesEx.AllConstructors);
+            if (allConstructors)
+            {
+                foreach (var c in typeDefinition.GetAllConstructorsOnTypeHierarchy(declaredOnly))
+                    yield return c;
+            }
+
+            if (!allConstructors && memberTypes.HasFlag(DynamicallyAccessedMemberTypes.NonPublicConstructors))
             {
                 foreach (var c in typeDefinition.GetConstructorsOnType(filter: null, bindingFlags: BindingFlags.NonPublic))
                     yield return c;
             }
 
-            if (memberTypes.HasFlag(DynamicallyAccessedMemberTypes.PublicConstructors))
+            if (!allConstructors && memberTypes.HasFlag(DynamicallyAccessedMemberTypes.PublicConstructors))
             {
                 foreach (var c in typeDefinition.GetConstructorsOnType(filter: null, bindingFlags: BindingFlags.Public))
                     yield return c;
             }
 
-            if (memberTypes.HasFlag(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor))
+            if (!allConstructors && memberTypes.HasFlag(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor))
             {
                 foreach (var c in typeDefinition.GetConstructorsOnType(filter: m => m.IsPublic() && !m.HasMetadataParameters()))
                     yield return c;
             }
 
-            if (memberTypes.HasFlag(DynamicallyAccessedMemberTypes.NonPublicMethods))
+            bool allMethods = memberTypes.HasFlag(DynamicallyAccessedMemberTypesEx.AllMethods);
+            if (allMethods)
+            {
+                foreach (var m in typeDefinition.GetAllMethodsOnTypeHierarchy(declaredOnly))
+                    yield return m;
+            }
+
+            if (!allMethods && memberTypes.HasFlag(DynamicallyAccessedMemberTypes.NonPublicMethods))
             {
                 foreach (var m in typeDefinition.GetMethodsOnTypeHierarchy(filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
                     yield return m;
             }
 
-            if (memberTypes.HasFlag(DynamicallyAccessedMemberTypes.PublicMethods))
+            if (!allMethods && memberTypes.HasFlag(DynamicallyAccessedMemberTypes.PublicMethods))
             {
                 foreach (var m in typeDefinition.GetMethodsOnTypeHierarchy(filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
                     yield return m;
             }
 
-            if (memberTypes.HasFlag(DynamicallyAccessedMemberTypes.NonPublicFields))
+            bool allFields = memberTypes.HasFlag(DynamicallyAccessedMemberTypesEx.AllFields);
+            if (allFields)
             {
                 foreach (var f in typeDefinition.GetFieldsOnTypeHierarchy(filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
                     yield return f;
             }
 
-            if (memberTypes.HasFlag(DynamicallyAccessedMemberTypes.PublicFields))
+            if (!allFields && memberTypes.HasFlag(DynamicallyAccessedMemberTypes.NonPublicFields))
+            {
+                foreach (var f in typeDefinition.GetFieldsOnTypeHierarchy(filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
+                    yield return f;
+            }
+
+            if (!allFields && memberTypes.HasFlag(DynamicallyAccessedMemberTypes.PublicFields))
             {
                 foreach (var f in typeDefinition.GetFieldsOnTypeHierarchy(filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
                     yield return f;
             }
 
-            if (memberTypes.HasFlag(DynamicallyAccessedMemberTypes.NonPublicNestedTypes))
+            bool allNestedTypes = memberTypes.HasFlag(DynamicallyAccessedMemberTypesEx.AllNestedTypes);
+            if (allNestedTypes)
+            {
+                foreach (var t in typeDefinition.GetAllNestedTypesOnTypeHierarchy(declaredOnly))
+                {
+                    yield return t;
+                    var members = new List<TypeSystemEntity>();
+                    t.GetAllOnType(declaredOnly: false, members);
+                    foreach (var m in members)
+                        yield return m;
+                }
+            }
+
+            if (!allNestedTypes && memberTypes.HasFlag(DynamicallyAccessedMemberTypes.NonPublicNestedTypes))
             {
                 foreach (var t in typeDefinition.GetNestedTypesOnType(filter: null, bindingFlags: BindingFlags.NonPublic))
                 {
@@ -86,7 +137,7 @@ namespace ILCompiler.Dataflow
                 }
             }
 
-            if (memberTypes.HasFlag(DynamicallyAccessedMemberTypes.PublicNestedTypes))
+            if (!allNestedTypes && memberTypes.HasFlag(DynamicallyAccessedMemberTypes.PublicNestedTypes))
             {
                 foreach (var t in typeDefinition.GetNestedTypesOnType(filter: null, bindingFlags: BindingFlags.Public))
                 {
@@ -98,25 +149,39 @@ namespace ILCompiler.Dataflow
                 }
             }
 
-            if (memberTypes.HasFlag(DynamicallyAccessedMemberTypes.NonPublicProperties))
+            bool allProperties = memberTypes.HasFlag(DynamicallyAccessedMemberTypesEx.AllProperties);
+            if (allProperties)
+            {
+                foreach (var p in typeDefinition.GetAllPropertiesOnTypeHierarchy(declaredOnly))
+                    yield return p;
+            }
+
+            if (!allProperties && memberTypes.HasFlag(DynamicallyAccessedMemberTypes.NonPublicProperties))
             {
                 foreach (var p in typeDefinition.GetPropertiesOnTypeHierarchy(filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
                     yield return p;
             }
 
-            if (memberTypes.HasFlag(DynamicallyAccessedMemberTypes.PublicProperties))
+            if (!allProperties && memberTypes.HasFlag(DynamicallyAccessedMemberTypes.PublicProperties))
             {
                 foreach (var p in typeDefinition.GetPropertiesOnTypeHierarchy(filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
                     yield return p;
             }
 
-            if (memberTypes.HasFlag(DynamicallyAccessedMemberTypes.NonPublicEvents))
+            bool allEvents = memberTypes.HasFlag(DynamicallyAccessedMemberTypesEx.AllEvents);
+            if (allEvents)
+            {
+                foreach (var e in typeDefinition.GetAllEventsOnTypeHierarchy(declaredOnly))
+                    yield return e;
+            }
+
+            if (!allEvents && memberTypes.HasFlag(DynamicallyAccessedMemberTypes.NonPublicEvents))
             {
                 foreach (var e in typeDefinition.GetEventsOnTypeHierarchy(filter: null, bindingFlags: BindingFlags.NonPublic | declaredOnlyFlags))
                     yield return e;
             }
 
-            if (memberTypes.HasFlag(DynamicallyAccessedMemberTypes.PublicEvents))
+            if (!allEvents && memberTypes.HasFlag(DynamicallyAccessedMemberTypes.PublicEvents))
             {
                 foreach (var e in typeDefinition.GetEventsOnTypeHierarchy(filter: null, bindingFlags: BindingFlags.Public | declaredOnlyFlags))
                     yield return e;
@@ -126,6 +191,31 @@ namespace ILCompiler.Dataflow
             {
                 foreach (DefType iface in typeDefinition.GetAllInterfaceImplementations(declaredOnly))
                     yield return iface;
+            }
+        }
+
+        public static IEnumerable<MethodDesc> GetAllConstructorsOnTypeHierarchy(this TypeDesc type, bool declaredOnly)
+        {
+            if (type.IsArray)
+            {
+                // Constructors on arrays are special magic that the reflection stack special cases at runtime anyway.
+                yield break;
+            }
+
+            while (type != null)
+            {
+                foreach (var method in type.GetMethods())
+                {
+                    if (!method.IsConstructor && !method.IsStaticConstructor)
+                        continue;
+
+                    yield return method;
+                }
+
+                if (declaredOnly)
+                    yield break;
+
+                type = type.TryGetBaseType();
             }
         }
 
@@ -158,6 +248,34 @@ namespace ILCompiler.Dataflow
                     continue;
 
                 yield return method;
+            }
+        }
+
+        public static IEnumerable<MethodDesc> GetAllMethodsOnTypeHierarchy(this TypeDesc type, bool declaredOnly)
+        {
+            if (type.IsArray)
+            {
+                // Methods on arrays are special magic that the reflection stack special cases at runtime anyway.
+                type = type.BaseType;
+
+                if (declaredOnly)
+                    yield break;
+            }
+
+            while (type != null)
+            {
+                foreach (var method in type.GetMethods())
+                {
+                    if (method.IsConstructor || method.IsStaticConstructor)
+                        continue;
+
+                    yield return method;
+                }
+
+                if (declaredOnly)
+                    yield break;
+
+                type = type.TryGetBaseType();
             }
         }
 
@@ -214,6 +332,22 @@ namespace ILCompiler.Dataflow
             }
         }
 
+        public static IEnumerable<FieldDesc> GetAllFieldsOnTypeHierarchy(this TypeDesc type, bool declaredOnly)
+        {
+            while (type != null)
+            {
+                foreach (var field in type.GetFields())
+                {
+                    yield return field;
+                }
+
+                if (declaredOnly)
+                    yield break;
+
+                type = type.TryGetBaseType();
+            }
+        }
+
         public static IEnumerable<FieldDesc> GetFieldsOnTypeHierarchy(this TypeDesc type, Func<FieldDesc, bool> filter, BindingFlags? bindingFlags = BindingFlags.Default)
         {
             bool onBaseType = false;
@@ -255,6 +389,24 @@ namespace ILCompiler.Dataflow
             }
         }
 
+        public static IEnumerable<MetadataType> GetAllNestedTypesOnTypeHierarchy(this TypeDesc type, bool declaredOnly)
+        {
+            var mdType = type as MetadataType;
+
+            while (mdType != null)
+            {
+                foreach (var nestedType in mdType.GetNestedTypes())
+                {
+                    yield return nestedType;
+                }
+
+                if (declaredOnly)
+                    yield break;
+
+                mdType = mdType.TryGetBaseType() as MetadataType;
+            }
+        }
+
         public static IEnumerable<MetadataType> GetNestedTypesOnType(this TypeDesc type, Func<MetadataType, bool> filter, BindingFlags? bindingFlags = BindingFlags.Default)
         {
             if (type is not MetadataType mdType)
@@ -278,6 +430,35 @@ namespace ILCompiler.Dataflow
                 }
 
                 yield return nestedType;
+            }
+        }
+
+        public static IEnumerable<PropertyPseudoDesc> GetAllPropertiesOnTypeHierarchy(this TypeDesc type, bool declaredOnly)
+        {
+            if (type.IsArray)
+            {
+                type = type.BaseType;
+                if (declaredOnly)
+                    yield break;
+            }
+
+            while (type != null)
+            {
+                if (type.GetTypeDefinition() is not EcmaType ecmaType)
+                {
+                    yield break;
+                }
+
+                foreach (var propertyHandle in ecmaType.MetadataReader.GetTypeDefinition(ecmaType.Handle).GetProperties())
+                {
+                    var property = new PropertyPseudoDesc(ecmaType, propertyHandle);
+                    yield return property;
+                }
+
+                if (declaredOnly)
+                    yield break;
+
+                type = type.TryGetBaseType();
             }
         }
 
@@ -346,6 +527,35 @@ namespace ILCompiler.Dataflow
 
                 type = type.TryGetBaseType();
                 onBaseType = true;
+            }
+        }
+
+        public static IEnumerable<EventPseudoDesc> GetAllEventsOnTypeHierarchy(this TypeDesc type, bool declaredOnly)
+        {
+            if (type.IsArray)
+            {
+                type = type.BaseType;
+                if (declaredOnly)
+                    yield break;
+            }
+
+            while (type != null)
+            {
+                if (type.GetTypeDefinition() is not EcmaType ecmaType)
+                {
+                    yield break;
+                }
+
+                foreach (var eventHandle in ecmaType.MetadataReader.GetTypeDefinition(ecmaType.Handle).GetEvents())
+                {
+                    var @event = new EventPseudoDesc(ecmaType, eventHandle);
+                    yield return @event;
+                }
+
+                if (declaredOnly)
+                    yield break;
+
+                type = type.TryGetBaseType();
             }
         }
 

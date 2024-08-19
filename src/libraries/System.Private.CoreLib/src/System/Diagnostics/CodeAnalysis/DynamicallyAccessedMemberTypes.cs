@@ -92,6 +92,14 @@ namespace System.Diagnostics.CodeAnalysis
         /// </summary>
         Interfaces = 0x2000,
 
+
+    AllConstructors = 0x4000 | PublicConstructors | NonPublicConstructors,
+    AllMethods = 0x8000 | PublicMethods | NonPublicMethods,
+    AllFields = 0x10000 | PublicFields | NonPublicFields,
+    AllNestedTypes = 0x20000 | PublicNestedTypes | NonPublicNestedTypes,
+    AllProperties = 0x40000 | PublicProperties | NonPublicProperties,
+    AllEvents = 0x80000 | PublicEvents | NonPublicEvents,
+
         /// <summary>
         /// Specifies all members.
         /// </summary>
