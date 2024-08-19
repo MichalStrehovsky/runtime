@@ -11,7 +11,7 @@ namespace System.ComponentModel.DataAnnotations
     /// </summary>
     public class AssociatedMetadataTypeTypeDescriptionProvider : TypeDescriptionProvider
     {
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.AllConstructors | DynamicallyAccessedMemberTypes.AllMethods | DynamicallyAccessedMemberTypes.AllEvents | DynamicallyAccessedMemberTypes.AllProperties | DynamicallyAccessedMemberTypes.AllFields | DynamicallyAccessedMemberTypes.AllNestedTypes)]
         private readonly Type? _associatedMetadataType;
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace System.ComponentModel.DataAnnotations
         /// <exception cref="System.ArgumentNullException">The value of associatedMetadataType is null.</exception>
         public AssociatedMetadataTypeTypeDescriptionProvider(
             Type type,
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type associatedMetadataType)
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.AllConstructors | DynamicallyAccessedMemberTypes.AllMethods | DynamicallyAccessedMemberTypes.AllEvents | DynamicallyAccessedMemberTypes.AllProperties | DynamicallyAccessedMemberTypes.AllFields | DynamicallyAccessedMemberTypes.AllNestedTypes)] Type associatedMetadataType)
             : this(type)
         {
             ArgumentNullException.ThrowIfNull(associatedMetadataType);
@@ -47,7 +47,7 @@ namespace System.ComponentModel.DataAnnotations
         /// <param name="objectType">The type of object to retrieve the type descriptor for.</param>
         /// <param name="instance">An instance of the type.</param>
         /// <returns>The descriptor that provides metadata for the type.</returns>
-        public override ICustomTypeDescriptor GetTypeDescriptor([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type objectType, object? instance)
+        public override ICustomTypeDescriptor GetTypeDescriptor([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.AllConstructors | DynamicallyAccessedMemberTypes.AllMethods | DynamicallyAccessedMemberTypes.AllEvents | DynamicallyAccessedMemberTypes.AllProperties | DynamicallyAccessedMemberTypes.AllFields | DynamicallyAccessedMemberTypes.AllNestedTypes)] Type objectType, object? instance)
         {
             ICustomTypeDescriptor? baseDescriptor = base.GetTypeDescriptor(objectType, instance);
             return new AssociatedMetadataTypeTypeDescriptor(baseDescriptor, objectType, _associatedMetadataType);

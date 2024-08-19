@@ -17,7 +17,7 @@ namespace MS.Internal.Xml.Linq.ComponentModel
         {
         }
 
-        public override ICustomTypeDescriptor GetTypeDescriptor([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type type, object? instance)
+        public override ICustomTypeDescriptor GetTypeDescriptor([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.AllConstructors | DynamicallyAccessedMemberTypes.AllMethods | DynamicallyAccessedMemberTypes.AllEvents | DynamicallyAccessedMemberTypes.AllProperties | DynamicallyAccessedMemberTypes.AllFields | DynamicallyAccessedMemberTypes.AllNestedTypes)] Type type, object? instance)
         {
             return new XTypeDescriptor<T>(base.GetTypeDescriptor(type, instance));
         }

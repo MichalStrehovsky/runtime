@@ -137,7 +137,7 @@ namespace System.ComponentModel
         /// </summary>
         [RequiresUnreferencedCode(PropertyDescriptorPropertyTypeMessage)]
         public ReflectPropertyDescriptor(
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type componentClass,
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.AllConstructors | DynamicallyAccessedMemberTypes.AllMethods | DynamicallyAccessedMemberTypes.AllEvents | DynamicallyAccessedMemberTypes.AllProperties | DynamicallyAccessedMemberTypes.AllFields | DynamicallyAccessedMemberTypes.AllNestedTypes)] Type componentClass,
             string name,
             Type type,
             Type receiverType,
@@ -158,7 +158,7 @@ namespace System.ComponentModel
         /// </summary>
         [RequiresUnreferencedCode(PropertyDescriptorPropertyTypeMessage)]
         public ReflectPropertyDescriptor(
-            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type componentClass,
+            [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.AllConstructors | DynamicallyAccessedMemberTypes.AllMethods | DynamicallyAccessedMemberTypes.AllEvents | DynamicallyAccessedMemberTypes.AllProperties | DynamicallyAccessedMemberTypes.AllFields | DynamicallyAccessedMemberTypes.AllNestedTypes)] Type componentClass,
             PropertyDescriptor oldReflectPropertyDescriptor,
             Attribute[] attributes)
             : base(oldReflectPropertyDescriptor, attributes)

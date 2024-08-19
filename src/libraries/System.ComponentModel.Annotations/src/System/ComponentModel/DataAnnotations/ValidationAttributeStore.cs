@@ -122,7 +122,7 @@ namespace System.ComponentModel.DataAnnotations
             return _typeStoreItems.GetOrAdd(type, AddTypeStoreItem);
 
             [UnconditionalSuppressMessage("ReflectionAnalysis", "IL2067:UnrecognizedReflectionPattern",
-                Justification = "The parameter in the parent method has already been marked DynamicallyAccessedMemberTypes.All.")]
+                Justification = "The parameter in the parent method has already been marked DynamicallyAccessedMemberTypes.AllConstructors | DynamicallyAccessedMemberTypes.AllMethods | DynamicallyAccessedMemberTypes.AllEvents | DynamicallyAccessedMemberTypes.AllProperties | DynamicallyAccessedMemberTypes.AllFields | DynamicallyAccessedMemberTypes.AllNestedTypes.")]
             static TypeStoreItem AddTypeStoreItem(Type type)
             {
                 AttributeCollection attributes = TypeDescriptor.GetAttributes(type);
@@ -163,7 +163,7 @@ namespace System.ComponentModel.DataAnnotations
         /// </summary>
         private sealed class TypeStoreItem : StoreItem
         {
-            internal const DynamicallyAccessedMemberTypes DynamicallyAccessedTypes = DynamicallyAccessedMemberTypes.All;
+            internal const DynamicallyAccessedMemberTypes DynamicallyAccessedTypes = DynamicallyAccessedMemberTypes.AllConstructors | DynamicallyAccessedMemberTypes.AllMethods | DynamicallyAccessedMemberTypes.AllEvents | DynamicallyAccessedMemberTypes.AllProperties | DynamicallyAccessedMemberTypes.AllFields | DynamicallyAccessedMemberTypes.AllNestedTypes;
 
             private readonly object _syncRoot = new object();
             [DynamicallyAccessedMembers(DynamicallyAccessedTypes)]

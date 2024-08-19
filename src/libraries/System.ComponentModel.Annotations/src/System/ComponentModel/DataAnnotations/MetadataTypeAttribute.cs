@@ -12,7 +12,7 @@ namespace System.ComponentModel.DataAnnotations
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public sealed class MetadataTypeAttribute : Attribute
     {
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.AllConstructors | DynamicallyAccessedMemberTypes.AllMethods | DynamicallyAccessedMemberTypes.AllEvents | DynamicallyAccessedMemberTypes.AllProperties | DynamicallyAccessedMemberTypes.AllFields | DynamicallyAccessedMemberTypes.AllNestedTypes)]
         private readonly Type _metadataClassType;
 
         /// <summary>
@@ -21,7 +21,7 @@ namespace System.ComponentModel.DataAnnotations
         /// </summary>
         /// <param name="metadataClassType">The metadata class to reference.</param>
         /// <exception cref="System.ArgumentNullException">metadataClassType is null.</exception>
-        public MetadataTypeAttribute([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type metadataClassType)
+        public MetadataTypeAttribute([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.AllConstructors | DynamicallyAccessedMemberTypes.AllMethods | DynamicallyAccessedMemberTypes.AllEvents | DynamicallyAccessedMemberTypes.AllProperties | DynamicallyAccessedMemberTypes.AllFields | DynamicallyAccessedMemberTypes.AllNestedTypes)] Type metadataClassType)
         {
             _metadataClassType = metadataClassType;
         }
@@ -29,7 +29,7 @@ namespace System.ComponentModel.DataAnnotations
         /// <summary>
         /// Gets the metadata class that is associated with a data-model partial class.
         /// </summary>
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.AllConstructors | DynamicallyAccessedMemberTypes.AllMethods | DynamicallyAccessedMemberTypes.AllEvents | DynamicallyAccessedMemberTypes.AllProperties | DynamicallyAccessedMemberTypes.AllFields | DynamicallyAccessedMemberTypes.AllNestedTypes)]
         public Type MetadataClassType
         {
             get
