@@ -1135,7 +1135,8 @@ namespace ILCompiler.DependencyAnalysis
             {
                 if (!_type.IsTypeDefinition)
                 {
-                    IEETypeNode typeDefNode = factory.NecessaryTypeSymbol(_type.GetTypeDefinition());
+                    IEETypeNode typeDefNode = factory.MaximallyConstructableType(_type) == this ?
+                        factory.ReflectionVisibleGenericDefinitionTypeSymbol(_type.GetTypeDefinition()) : factory.ReflectionInvisibleGenericDefinitionTypeSymbol(_type.GetTypeDefinition());
                     if (factory.Target.SupportsRelativePointers)
                         objData.EmitReloc(typeDefNode, RelocType.IMAGE_REL_BASED_RELPTR32);
                     else

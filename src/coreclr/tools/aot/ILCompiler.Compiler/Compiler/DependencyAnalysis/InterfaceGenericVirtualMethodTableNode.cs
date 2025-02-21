@@ -62,7 +62,7 @@ namespace ILCompiler.DependencyAnalysis
             if (implementationMethod != null)
             {
                 MethodDesc openImplementationMethod = implementationMethod.GetTypicalMethodDefinition();
-                dependencies.Add(new DependencyListEntry(factory.NecessaryTypeSymbol(openImplementationMethod.OwningType), "interface gvm table implementation method owning type"));
+                dependencies.Add(new DependencyListEntry(factory.MinimallyReferenceableType(openImplementationMethod.OwningType), "interface gvm table implementation method owning type"));
                 var openImplementationMethodNameAndSig = factory.NativeLayout.MethodNameAndSignatureVertex(openImplementationMethod);
                 dependencies.Add(new DependencyListEntry(factory.NativeLayout.PlacedSignatureVertex(openImplementationMethodNameAndSig), "interface gvm table implementation method signature"));
             }
@@ -152,7 +152,7 @@ namespace ILCompiler.DependencyAnalysis
                 MethodDesc callingMethod = gvmEntry.Key;
 
                 // Emit the method signature and containing type of the current interface method
-                uint typeId = _externalReferences.GetIndex(factory.NecessaryTypeSymbol(callingMethod.OwningType));
+                uint typeId = _externalReferences.GetIndex(factory.MinimallyReferenceableType(callingMethod.OwningType));
                 var nameAndSig = factory.NativeLayout.PlacedSignatureVertex(factory.NativeLayout.MethodNameAndSignatureVertex(callingMethod));
                 Vertex vertex = nativeFormatWriter.GetTuple(
                     nativeFormatWriter.GetUnsignedConstant(typeId),
@@ -165,7 +165,7 @@ namespace ILCompiler.DependencyAnalysis
                     if (impl is MethodDesc implementationMethod)
                     {
                         nameAndSig = factory.NativeLayout.PlacedSignatureVertex(factory.NativeLayout.MethodNameAndSignatureVertex(implementationMethod));
-                        typeId = _externalReferences.GetIndex(factory.NecessaryTypeSymbol(implementationMethod.OwningType));
+                        typeId = _externalReferences.GetIndex(factory.MinimallyReferenceableType(implementationMethod.OwningType));
                         vertex = nativeFormatWriter.GetTuple(
                             vertex,
                             nativeFormatWriter.GetUnsignedConstant((uint)nameAndSig.SavedVertex.VertexOffset),
@@ -199,7 +199,7 @@ namespace ILCompiler.DependencyAnalysis
                         {
                             TypeDesc implementationType = currentImpl.Key;
 
-                            typeId = _externalReferences.GetIndex(factory.NecessaryTypeSymbol(implementationType));
+                            typeId = _externalReferences.GetIndex(factory.MinimallyReferenceableType(implementationType));
                             vertex = nativeFormatWriter.GetTuple(vertex, nativeFormatWriter.GetUnsignedConstant(typeId));
 
                             // Emit information on which interfaces the current method entry provides implementations for

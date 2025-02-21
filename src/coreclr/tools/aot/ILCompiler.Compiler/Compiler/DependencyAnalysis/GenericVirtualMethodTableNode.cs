@@ -110,10 +110,10 @@ namespace ILCompiler.DependencyAnalysis
                     TypeDesc implementationType = implementationEntry.Key;
                     MethodDesc implementationMethod = implementationEntry.Value;
 
-                    uint callingTypeId = _externalReferences.GetIndex(factory.NecessaryTypeSymbol(callingMethod.OwningType));
+                    uint callingTypeId = _externalReferences.GetIndex(factory.MinimallyReferenceableType(callingMethod.OwningType));
                     Vertex vertex = nativeFormatWriter.GetUnsignedConstant(callingTypeId);
 
-                    uint targetTypeId = _externalReferences.GetIndex(factory.NecessaryTypeSymbol(implementationType));
+                    uint targetTypeId = _externalReferences.GetIndex(factory.MinimallyReferenceableType(implementationType));
                     vertex = nativeFormatWriter.GetTuple(vertex, nativeFormatWriter.GetUnsignedConstant(targetTypeId));
 
                     var nameAndSig = factory.NativeLayout.PlacedSignatureVertex(factory.NativeLayout.MethodNameAndSignatureVertex(callingMethod));

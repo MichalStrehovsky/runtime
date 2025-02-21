@@ -186,6 +186,16 @@ namespace ILCompiler.DependencyAnalysis
 
             _constructedTypeSymbols = new ConstructedTypeSymbolHashtable(this);
 
+            _reflectionInvisibleGenericDefinitionTypeSymbols = new NodeCache<TypeDesc, GenericDefinitionEETypeNode>((TypeDesc type) =>
+            {
+                return new ReflectionInvisibleGenericDefinitionEETypeNode(this, type);
+            });
+
+            _reflectionVisibleGenericDefinitionTypeSymbols = new NodeCache<TypeDesc, GenericDefinitionEETypeNode>((TypeDesc type) =>
+            {
+                return new ReflectionVisibleGenericDefinitionEETypeNode(this, type);
+            });
+
             _importedTypeSymbols = new NodeCache<TypeDesc, IEETypeNode>((TypeDesc type) =>
             {
                 Debug.Assert(_compilationModuleGroup.ShouldReferenceThroughImportTable(type));
@@ -589,11 +599,7 @@ namespace ILCompiler.DependencyAnalysis
             Debug.Assert(!_compilationModuleGroup.ShouldReferenceThroughImportTable(type));
             if (_compilationModuleGroup.ContainsType(type))
             {
-                if (type.IsGenericDefinition)
-                {
-                    return new GenericDefinitionEETypeNode(this, type);
-                }
-                else if (type.IsCanonicalDefinitionType(CanonicalFormKind.Any))
+                if (type.IsCanonicalDefinitionType(CanonicalFormKind.Any))
                 {
                     return new CanonicalDefinitionEETypeNode(this, type);
                 }
@@ -666,6 +672,8 @@ namespace ILCompiler.DependencyAnalysis
 
         public IEETypeNode NecessaryTypeSymbol(TypeDesc type)
         {
+            Debug.Assert(!type.IsGenericDefinition);
+
             if (_compilationModuleGroup.ShouldReferenceThroughImportTable(type))
             {
                 return ImportedEETypeSymbol(type);
@@ -679,6 +687,33 @@ namespace ILCompiler.DependencyAnalysis
             Debug.Assert(!TypeCannotHaveEEType(type));
 
             return _typeSymbols.GetOrCreateValue(type);
+        }
+
+        private NodeCache<TypeDesc, GenericDefinitionEETypeNode> _reflectionInvisibleGenericDefinitionTypeSymbols;
+        public IEETypeNode ReflectionInvisibleGenericDefinitionTypeSymbol(TypeDesc type)
+        {
+            if (_compilationModuleGroup.ShouldReferenceThroughImportTable(type))
+            {
+                return ImportedEETypeSymbol(type);
+            }
+
+            if (_compilationModuleGroup.ShouldPromoteToFullType(type))
+            {
+                return ReflectionVisibleGenericDefinitionTypeSymbol(type);
+            }
+
+            return _reflectionInvisibleGenericDefinitionTypeSymbols.GetOrAdd(type);
+        }
+
+        private NodeCache<TypeDesc, GenericDefinitionEETypeNode> _reflectionVisibleGenericDefinitionTypeSymbols;
+        public IEETypeNode ReflectionVisibleGenericDefinitionTypeSymbol(TypeDesc type)
+        {
+            if (_compilationModuleGroup.ShouldReferenceThroughImportTable(type))
+            {
+                return ImportedEETypeSymbol(type);
+            }
+
+            return _reflectionVisibleGenericDefinitionTypeSymbols.GetOrAdd(type);
         }
 
         private sealed class ConstructedTypeSymbolHashtable : TypeSymbolHashtable
@@ -705,6 +740,16 @@ namespace ILCompiler.DependencyAnalysis
         {
             if (ConstructedEETypeNode.CreationAllowed(type))
                 return ConstructedTypeSymbol(type);
+            else if (type.IsGenericDefinition)
+                return ReflectionVisibleGenericDefinitionTypeSymbol(type);
+            else
+                return NecessaryTypeSymbol(type);
+        }
+
+        public IEETypeNode MinimallyReferenceableType(TypeDesc type)
+        {
+            if (type.IsGenericDefinition)
+                return ReflectionInvisibleGenericDefinitionTypeSymbol(type);
             else
                 return NecessaryTypeSymbol(type);
         }

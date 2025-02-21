@@ -56,7 +56,7 @@ namespace ILCompiler.DependencyAnalysis
                     continue;
 
                 // Go with a necessary type symbol. It will be upgraded to a constructed one if a constructed was emitted.
-                IEETypeNode typeSymbol = factory.NecessaryTypeSymbol(mappingEntry.Entity);
+                IEETypeNode typeSymbol = factory.MinimallyReferenceableType(mappingEntry.Entity);
 
                 Vertex vertex = writer.GetTuple(
                     writer.GetUnsignedConstant(_externalReferences.GetIndex(typeSymbol)),

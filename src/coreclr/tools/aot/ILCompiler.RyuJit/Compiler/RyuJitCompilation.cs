@@ -77,7 +77,10 @@ namespace ILCompiler
             if (canPotentiallyConstruct)
                 return _nodeFactory.MaximallyConstructableType(type);
 
-            return _nodeFactory.NecessaryTypeSymbol(type);
+            if (type.IsGenericDefinition && NodeFactory.DevirtualizationManager.IsGenericDefinitionMethodTableReflectionVisible(type))
+                return _nodeFactory.ReflectionVisibleGenericDefinitionTypeSymbol(type);
+
+            return _nodeFactory.MinimallyReferenceableType(type);
         }
 
         public FrozenRuntimeTypeNode NecessaryRuntimeTypeIfPossible(TypeDesc type)

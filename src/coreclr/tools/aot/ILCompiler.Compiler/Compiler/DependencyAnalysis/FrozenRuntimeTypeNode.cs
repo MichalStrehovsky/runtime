@@ -30,9 +30,13 @@ namespace ILCompiler.DependencyAnalysis
 
         public override void EncodeContents(ref ObjectDataBuilder dataBuilder, NodeFactory factory, bool relocsOnly)
         {
-            IEETypeNode typeSymbol = _constructed
-                ? factory.ConstructedTypeSymbol(_type)
-                : factory.NecessaryTypeSymbol(_type);
+            IEETypeNode typeSymbol = (_type.IsGenericDefinition, _constructed) switch
+            {
+                (true, true) => factory.ReflectionVisibleGenericDefinitionTypeSymbol(_type),
+                (true, false) => factory.ReflectionInvisibleGenericDefinitionTypeSymbol(_type),
+                (false, true) => factory.ConstructedTypeSymbol(_type),
+                (false, false) => factory.NecessaryTypeSymbol(_type),
+            };
 
             dataBuilder.EmitPointerReloc(factory.ConstructedTypeSymbol(ObjectType));
             dataBuilder.EmitPointerReloc(typeSymbol); // RuntimeType::_pUnderlyingEEType

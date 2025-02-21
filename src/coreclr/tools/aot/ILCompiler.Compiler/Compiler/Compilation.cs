@@ -95,7 +95,7 @@ namespace ILCompiler
 
         public virtual IEETypeNode NecessaryTypeSymbolIfPossible(TypeDesc type)
         {
-            return _nodeFactory.NecessaryTypeSymbol(type);
+            return _nodeFactory.MinimallyReferenceableType(type);
         }
 
         public bool CanInline(MethodDesc caller, MethodDesc callee)

@@ -576,7 +576,7 @@ namespace ILCompiler.DependencyAnalysis
             {
                 Debug.Assert(Marked, "WriteVertex should only happen for marked vertices");
 
-                IEETypeNode eetypeNode = factory.NecessaryTypeSymbol(_type);
+                IEETypeNode eetypeNode = factory.MinimallyReferenceableType(_type);
                 uint typeIndex = factory.MetadataManager.NativeLayoutInfo.ExternalReferences.GetIndex(eetypeNode);
                 return GetNativeWriter(factory).GetExternalTypeSignature(typeIndex);
             }
