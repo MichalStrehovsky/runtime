@@ -92,7 +92,7 @@ namespace ILCompiler
                 int instructions = 0;
                 status = preinit.TryScanMethod(type.GetStaticConstructor(), null, null, ref instructions, out _);
             }
-            catch (TypeSystemException ex)
+            catch (TypeSystemException.TypeLoadException ex)
             {
                 status = Status.Fail(type.GetStaticConstructor(), ex.Message);
             }
@@ -788,12 +788,11 @@ namespace ILCompiler
                             StackEntry instance = stack.Pop();
 
                             var loadableInstance = instance.Value as IHasInstanceFields;
-                            if (loadableInstance == null)
+                            if (loadableInstance == null
+                                || !loadableInstance.TryGetField(field, out Value fieldValue))
                             {
                                 return Status.Fail(methodIL.OwningMethod, opcode);
                             }
-
-                            Value fieldValue = loadableInstance.GetField(field);
 
                             stack.PushFromLocation(field.FieldType, fieldValue);
                         }
@@ -2290,7 +2289,7 @@ namespace ILCompiler
         private interface IHasInstanceFields
         {
             bool TrySetField(FieldDesc field, Value value);
-            Value GetField(FieldDesc field);
+            bool TryGetField(FieldDesc field, out Value value);
             ByRefValueBase GetFieldAddress(FieldDesc field);
         }
 
@@ -2626,14 +2625,15 @@ namespace ILCompiler
                     return true;
                 }
 
-                Value IHasInstanceFields.GetField(FieldDesc field)
+                bool IHasInstanceFields.TryGetField(FieldDesc field, out Value value)
                 {
                     MethodDesc method = _methods[GetFieldIndex(field)];
 
                     if (method is not null)
-                        return new MethodPointerValue(method);
+                        value = new MethodPointerValue(method);
                     else
-                        return _pointerSize == 8 ? ValueTypeValue.FromInt64(0) : ValueTypeValue.FromInt32(0);
+                        value = _pointerSize == 8 ? ValueTypeValue.FromInt64(0) : ValueTypeValue.FromInt32(0);
+                    return true;
                 }
 
                 ByRefValueBase IHasInstanceFields.GetFieldAddress(FieldDesc field)
@@ -2854,7 +2854,7 @@ namespace ILCompiler
 
             public bool TrySetField(FieldDesc field, Value value) => false;
 
-            public Value GetField(FieldDesc field)
+            public bool TryGetField(FieldDesc field, out Value value)
             {
                 MetadataType elementType;
                 if (!TryGetSpanElementType(field.OwningType, isReadOnlySpan: true, out elementType)
@@ -2865,10 +2865,15 @@ namespace ILCompiler
                     ThrowHelper.ThrowInvalidProgramException();
 
                 if (field.Name == "_length")
-                    return ValueTypeValue.FromInt32(_length / _elementType.InstanceFieldSize.AsInt);
-
-                Debug.Assert(field.Name == "_reference");
-                return new ByRefValue(_bytes, _index);
+                {
+                    value = ValueTypeValue.FromInt32(_length / _elementType.InstanceFieldSize.AsInt);
+                }
+                else
+                {
+                    Debug.Assert(field.Name == "_reference");
+                    value = new ByRefValue(_bytes, _index);
+                }
+                return true;
             }
 
             public ByRefValueBase GetFieldAddress(FieldDesc field)
@@ -2945,7 +2950,7 @@ namespace ILCompiler
                 return true;
             }
 
-            Value IHasInstanceFields.GetField(FieldDesc field) => new FieldAccessor(PointedToBytes, PointedToOffset).GetField(field);
+            bool IHasInstanceFields.TryGetField(FieldDesc field, out Value value) => new FieldAccessor(PointedToBytes, PointedToOffset).TryGetField(field, out value);
             bool IHasInstanceFields.TrySetField(FieldDesc field, Value value) => new FieldAccessor(PointedToBytes, PointedToOffset).TrySetField(field, value);
             ByRefValueBase IHasInstanceFields.GetFieldAddress(FieldDesc field) => new FieldAccessor(PointedToBytes, PointedToOffset).GetFieldAddress(field);
 
@@ -3352,7 +3357,7 @@ namespace ILCompiler
                 }
                 return result;
             }
-            Value IHasInstanceFields.GetField(FieldDesc field) => new FieldAccessor(_value).GetField(field);
+            bool IHasInstanceFields.TryGetField(FieldDesc field, out Value value) => new FieldAccessor(_value).TryGetField(field, out value);
             bool IHasInstanceFields.TrySetField(FieldDesc field, Value value) => false;
             ByRefValueBase IHasInstanceFields.GetFieldAddress(FieldDesc field) => new FieldAccessor(_value).GetFieldAddress(field);
         }
@@ -3402,7 +3407,7 @@ namespace ILCompiler
                 return true;
             }
 
-            Value IHasInstanceFields.GetField(FieldDesc field) => new FieldAccessor(_data).GetField(field);
+            bool IHasInstanceFields.TryGetField(FieldDesc field, out Value value) => new FieldAccessor(_data).TryGetField(field, out value);
             bool IHasInstanceFields.TrySetField(FieldDesc field, Value value) => new FieldAccessor(_data).TrySetField(field, value);
             ByRefValueBase IHasInstanceFields.GetFieldAddress(FieldDesc field) => new FieldAccessor(_data).GetFieldAddress(field);
 
@@ -3440,7 +3445,7 @@ namespace ILCompiler
                 _offset = offset;
             }
 
-            public ValueTypeValue GetField(FieldDesc field)
+            public bool TryGetField(FieldDesc field, out Value value)
             {
                 Debug.Assert(!field.IsStatic);
                 Debug.Assert(!field.FieldType.IsGCPointer);
@@ -3449,9 +3454,17 @@ namespace ILCompiler
                 if (fieldOffset + fieldSize > _instanceBytes.Length - _offset)
                     ThrowHelper.ThrowInvalidProgramException();
 
+                if (field.OwningType.IsObject)
+                {
+                    // Don't allow returning m_pEEType field. We don't model the value.
+                    value = null;
+                    return false;
+                }
+
                 var result = new ValueTypeValue(field.FieldType);
                 Array.Copy(_instanceBytes, _offset + fieldOffset, result.InstanceBytes, 0, fieldSize);
-                return result;
+                value = result;
+                return true;
             }
 
             public bool TrySetField(FieldDesc field, Value value)
