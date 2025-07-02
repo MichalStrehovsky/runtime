@@ -2936,7 +2936,7 @@ namespace System.Net.Sockets
 
                 WildcardBindForConnectIfNecessary(endPointSnapshot.AddressFamily);
 
-                e.ConnectActivity = SocketsTelemetry.Log.ConnectStart(e._socketAddress!, _protocolType, endPointSnapshot, keepActivityCurrent: true);
+                //e.ConnectActivity = SocketsTelemetry.Log.ConnectStart(e._socketAddress!, _protocolType, endPointSnapshot, keepActivityCurrent: true);
 
                 // Prepare for the native call.
                 try
@@ -2947,7 +2947,7 @@ namespace System.Net.Sockets
                 catch (Exception ex)
                 {
                     SocketsTelemetry.Log.AfterConnect(SocketError.NotSocket, e.ConnectActivity, ex.Message);
-                    e.ConnectActivity = null;
+                    //e.ConnectActivity = null;
                     throw;
                 }
 
@@ -2964,7 +2964,7 @@ namespace System.Net.Sockets
                 catch (Exception ex)
                 {
                     SocketsTelemetry.Log.AfterConnect(SocketError.NotSocket, e.ConnectActivity, ex.Message);
-                    e.ConnectActivity = null;
+                    //e.ConnectActivity = null;
 
                     _localEndPoint = null;
 

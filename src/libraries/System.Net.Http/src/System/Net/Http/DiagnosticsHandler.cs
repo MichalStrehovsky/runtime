@@ -16,7 +16,7 @@ namespace System.Net.Http
     internal sealed class DiagnosticsHandler : HttpMessageHandlerStage
     {
         private static readonly DiagnosticListener s_diagnosticListener = new DiagnosticListener(DiagnosticsHandlerLoggingStrings.DiagnosticListenerName);
-        internal static readonly ActivitySource s_activitySource = new ActivitySource(DiagnosticsHandlerLoggingStrings.RequestNamespace);
+        //internal static readonly ActivitySource s_activitySource = new ActivitySource(DiagnosticsHandlerLoggingStrings.RequestNamespace);
 
         private readonly HttpMessageHandler _innerHandler;
         private readonly DistributedContextPropagator _propagator;
@@ -49,13 +49,14 @@ namespace System.Net.Http
         {
             // check if there is a parent Activity or if someone listens to "System.Net.Http" ActivitySource or "HttpHandlerDiagnosticListener" DiagnosticListener.
             return Activity.Current != null ||
-                   s_activitySource.HasListeners() ||
+                   //s_activitySource.HasListeners() ||
                    s_diagnosticListener.IsEnabled();
         }
 
         private static Activity? StartActivity(HttpRequestMessage request)
         {
             Activity? activity = null;
+#if false
             if (s_activitySource.HasListeners())
             {
                 activity = s_activitySource.StartActivity(DiagnosticsHandlerLoggingStrings.RequestActivityName, ActivityKind.Client);
@@ -67,6 +68,7 @@ namespace System.Net.Http
             {
                 activity = new Activity(DiagnosticsHandlerLoggingStrings.RequestActivityName).Start();
             }
+#endif
 
             return activity;
         }

@@ -12,7 +12,7 @@ namespace System.Net.Sockets
     {
         private const string ActivitySourceName = "Experimental.System.Net.Sockets";
         private const string ConnectActivityName = ActivitySourceName + ".Connect";
-        private static readonly ActivitySource s_connectActivitySource = new ActivitySource(ActivitySourceName);
+        //private static readonly ActivitySource s_connectActivitySource = new ActivitySource(ActivitySourceName);
 
         public static readonly SocketsTelemetry Log = new SocketsTelemetry();
 
@@ -89,7 +89,8 @@ namespace System.Net.Sockets
             {
                 ConnectStart(address.ToString());
             }
-
+            return null;
+#if false
             Activity? activity = null;
             if (s_connectActivitySource.HasListeners())
             {
@@ -139,6 +140,7 @@ namespace System.Net.Sockets
             static void SetNetworkTransport(Activity activity, string transportType) => activity.SetTag("network.transport", transportType);
 
             return activity;
+#endif
         }
 
         [NonEvent]

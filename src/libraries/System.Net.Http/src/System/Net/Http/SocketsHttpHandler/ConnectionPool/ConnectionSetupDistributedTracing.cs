@@ -14,6 +14,11 @@ namespace System.Net.Http
 
         public static Activity? StartConnectionSetupActivity(bool isSecure, HttpAuthority authority)
         {
+            if (!GlobalHttpSettings.DiagnosticsHandler.EnableActivityPropagation)
+            {
+                return null;
+            }
+
             Activity? activity = null;
             if (s_connectionsActivitySource.HasListeners())
             {
@@ -85,6 +90,7 @@ namespace System.Net.Http
             Debug.Assert(connectionSetupActivity is not null);
 
             // We only support links for request activities created by the "System.Net.Http" ActivitySource.
+#if false
             if (GlobalHttpSettings.DiagnosticsHandler.EnableActivityPropagation && DiagnosticsHandler.s_activitySource.HasListeners())
             {
                 Activity? requestActivity = Activity.Current;
@@ -93,6 +99,7 @@ namespace System.Net.Http
                     requestActivity.AddLink(new ActivityLink(connectionSetupActivity.Context));
                 }
             }
+#endif
         }
     }
 }

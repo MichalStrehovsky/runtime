@@ -64,10 +64,11 @@ namespace System.Net
         [NonEvent]
         public NameResolutionActivity BeforeResolution(object hostNameOrAddress, long startingTimestamp = 0)
         {
-            if (!AnyDiagnosticsEnabled())
+//            if (!AnyDiagnosticsEnabled())
             {
                 return default;
             }
+#if false
 
             if (IsEnabled())
             {
@@ -86,6 +87,7 @@ namespace System.Net
 
             startingTimestamp = startingTimestamp is not 0 ? startingTimestamp : NameResolutionMetrics.IsEnabled() ? Stopwatch.GetTimestamp() : 0;
             return new NameResolutionActivity(hostNameOrAddress, startingTimestamp);
+#endif
         }
 
         [NonEvent]
@@ -160,7 +162,7 @@ namespace System.Net
     {
         private const string ActivitySourceName = "Experimental.System.Net.NameResolution";
         private const string ActivityName = ActivitySourceName + ".DnsLookup";
-        private static readonly ActivitySource s_activitySource = new ActivitySource(ActivitySourceName);
+        //private static readonly ActivitySource s_activitySource = new ActivitySource(ActivitySourceName);
 
         // _startingTimestamp == 0 means NameResolutionTelemetry and NameResolutionMetrics are both disabled.
         private readonly long _startingTimestamp;
@@ -169,6 +171,7 @@ namespace System.Net
         public NameResolutionActivity(object hostNameOrAddress, long startingTimestamp)
         {
             _startingTimestamp = startingTimestamp;
+#if false
             _activity = s_activitySource.StartActivity(ActivityName);
             if (_activity is not null)
             {
@@ -179,9 +182,10 @@ namespace System.Net
                     _activity.SetTag("dns.question.name", host);
                 }
             }
+#endif
         }
 
-        public static bool IsTracingEnabled() => s_activitySource.HasListeners();
+        public static bool IsTracingEnabled() => false;//s_activitySource.HasListeners();
 
         // Returns true if either NameResolutionTelemetry or NameResolutionMetrics is enabled.
         public bool Stop(object? answer, Exception? exception, out TimeSpan duration)

@@ -15,7 +15,7 @@ namespace System.Net.Security
         private const string ActivitySourceName = "Experimental.System.Net.Security";
         private const string ActivityName = ActivitySourceName + ".TlsHandshake";
 
-        private static readonly ActivitySource s_activitySource = new ActivitySource(ActivitySourceName);
+        //private static readonly ActivitySource s_activitySource = new ActivitySource(ActivitySourceName);
 
         private const string EventSourceSuppressMessage = "Parameters to this method are primitive and are trimmer safe";
         public static readonly NetSecurityTelemetry Log = new NetSecurityTelemetry();
@@ -44,7 +44,7 @@ namespace System.Net.Security
         private long _sessionsOpenTls12;
         private long _sessionsOpenTls13;
 
-        public static bool AnyTelemetryEnabled() => Log.IsEnabled() || s_activitySource.HasListeners();
+        public static bool AnyTelemetryEnabled() => false;//Log.IsEnabled() || s_activitySource.HasListeners();
 
         protected override void OnEventCommand(EventCommandEventArgs command)
         {
@@ -315,6 +315,7 @@ namespace System.Net.Security
         [NonEvent]
         public static Activity? StartActivity(SslStream stream)
         {
+#if false
             using Activity? activity = s_activitySource.StartActivity(ActivityName);
             if (activity is not null)
             {
@@ -325,6 +326,8 @@ namespace System.Net.Security
                 }
             }
             return activity;
+#endif
+            return null;
         }
 
         [NonEvent]
