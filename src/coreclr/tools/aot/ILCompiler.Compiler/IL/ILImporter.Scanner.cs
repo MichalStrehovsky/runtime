@@ -424,6 +424,19 @@ namespace Internal.IL
                     return;
                 }
 
+                if (IsEETypePtrForCastingOf(method))
+                {
+                    if (runtimeDeterminedMethod.IsRuntimeDeterminedExactMethod)
+                    {
+                        _dependencies.Add(GetGenericLookupHelper(ReadyToRunHelperId.NecessaryTypeHandle, runtimeDeterminedMethod.Instantiation[0]), reason);
+                    }
+                    else
+                    {
+                        _dependencies.Add(_factory.NecessaryTypeSymbol(method.Instantiation[0]), reason);
+                    }
+                    return;
+                }
+
                 if (opcode != ILOpcode.ldftn)
                 {
                     if (IsRuntimeHelpersIsReferenceOrContainsReferences(method))
@@ -886,7 +899,7 @@ namespace Internal.IL
 
             if (type.IsRuntimeDeterminedSubtype)
             {
-                _dependencies.Add(GetGenericLookupHelper(ReadyToRunHelperId.TypeHandle, type), "Unbox");
+                _dependencies.Add(GetGenericLookupHelper(ReadyToRunHelperId.NecessaryTypeHandle, type), "Unbox");
             }
             else
             {
@@ -963,7 +976,8 @@ namespace Internal.IL
                 ISymbolNode reference;
                 if (type.IsRuntimeDeterminedSubtype)
                 {
-                    reference = GetGenericLookupHelper(ReadyToRunHelperId.TypeHandle, type);
+                    reference = GetGenericLookupHelper(
+                        isTypeEquals ? ReadyToRunHelperId.NecessaryTypeHandle : ReadyToRunHelperId.TypeHandle, type);
                 }
                 else
                 {
@@ -1257,7 +1271,7 @@ namespace Internal.IL
             if (elementType.IsGCPointer && !_isReadOnly)
             {
                 if (elementType.IsRuntimeDeterminedSubtype)
-                    _dependencies.Add(GetGenericLookupHelper(ReadyToRunHelperId.TypeHandle, elementType), "ldelema");
+                    _dependencies.Add(GetGenericLookupHelper(ReadyToRunHelperId.NecessaryTypeHandle, elementType), "ldelema");
                 else
                     _dependencies.Add(_factory.NecessaryTypeSymbol(elementType), "ldelema");
 
@@ -1474,6 +1488,20 @@ namespace Internal.IL
         private static bool IsEETypePtrOf(MethodDesc method)
         {
             if (method.IsIntrinsic && method.Name == "Of" && method.Instantiation.Length == 1)
+            {
+                MetadataType owningType = method.OwningType as MetadataType;
+                if (owningType != null)
+                {
+                    return owningType.Name == "MethodTable" && owningType.Namespace == "Internal.Runtime";
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsEETypePtrForCastingOf(MethodDesc method)
+        {
+            if (method.IsIntrinsic && method.Name == "ForCastingOf" && method.Instantiation.Length == 1)
             {
                 MetadataType owningType = method.OwningType as MetadataType;
                 if (owningType != null)
