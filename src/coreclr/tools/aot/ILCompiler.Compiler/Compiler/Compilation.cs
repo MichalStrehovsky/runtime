@@ -393,12 +393,6 @@ namespace ILCompiler
                 }
             }
 
-            // We don't have separate entries for necessary type handles to avoid possible duplication
-            if (lookupKind == ReadyToRunHelperId.NecessaryTypeHandle)
-            {
-                lookupKind = ReadyToRunHelperId.TypeHandle;
-            }
-
             DictionaryLayoutNode dictionaryLayout;
             if (contextSource == GenericContextSource.MethodParameter)
                 dictionaryLayout = _nodeFactory.GenericDictionaryLayout(contextMethod);
