@@ -2963,6 +2963,99 @@ GenTree* Lowering::LowerCall(GenTree* node)
     {
         LowerCFGCall(call);
     }
+    else if (call->IsVirtualStub())
+    {
+        GenTree* callTarget = call->gtCallType == CT_INDIRECT ? call->gtCallAddr : call->gtControlExpr;
+
+        auto cloneUse = [=](LIR::Use& use, bool cloneConsts) -> GenTree* {
+            bool canClone = cloneConsts && use.Def()->IsCnsIntOrI();
+            if (!canClone && use.Def()->OperIs(GT_LCL_VAR))
+            {
+                canClone = !comp->lvaGetDesc(use.Def()->AsLclVarCommon())->IsAddressExposed();
+            }
+
+            if (canClone)
+            {
+                return comp->gtCloneExpr(use.Def());
+            }
+            else
+            {
+                unsigned newLcl = use.ReplaceWithLclVar(comp);
+                return comp->gtNewLclvNode(newLcl, TYP_I_IMPL);
+            }
+        };
+
+        // VSDs go through a resolver instead which skips double validation and
+        // indirection.
+        CallArg* vsdCellArg = call->gtArgs.FindWellKnownArg(WellKnownArg::VirtualStubCell);
+        CallArg* thisArg    = call->gtArgs.GetThisArg();
+
+        assert((vsdCellArg != nullptr) && (thisArg != nullptr));
+        assert(thisArg->GetNode()->OperIs(GT_PUTARG_REG));
+        LIR::Use thisArgUse(BlockRange(), &thisArg->GetNode()->AsOp()->gtOp1, thisArg->GetNode());
+        GenTree* thisArgClone = cloneUse(thisArgUse, true);
+
+        // The VSD cell is not needed for the original call when going through the resolver.
+        // It can be removed without further fixups because it has fixed ABI assignment.
+        call->gtArgs.RemoveUnsafe(vsdCellArg);
+        assert(vsdCellArg->GetNode()->OperIs(GT_PUTARG_REG));
+        // Also PUTARG_REG can be removed.
+        BlockRange().Remove(vsdCellArg->GetNode());
+        // The actual cell we need for the resolver.
+        GenTree* vsdCellArgNode = vsdCellArg->GetNode()->gtGetOp1();
+
+        GenTreeCall* resolve = comp->gtNewHelperCallNode(CORINFO_HELP_INTERFACELOOKUP_FOR_SLOT, TYP_I_IMPL);
+
+        // Use a placeholder for the cell since the cell is already inserted in
+        // LIR.
+        GenTree* vsdCellPlaceholder = comp->gtNewZeroConNode(TYP_I_IMPL);
+        resolve->gtArgs.PushFront(comp,
+                                  NewCallArg::Primitive(vsdCellPlaceholder).WellKnown(WellKnownArg::VirtualStubCell));
+
+        // 'this' arg clone is not inserted, so no need to use a placeholder for that.
+        resolve->gtArgs.PushFront(comp, NewCallArg::Primitive(thisArgClone));
+
+        comp->fgMorphTree(resolve);
+
+        LIR::Range resolveRange = LIR::SeqTree(comp, resolve);
+        GenTree*   resolveFirst = resolveRange.FirstNode();
+        GenTree*   resolveLast  = resolveRange.LastNode();
+        // Resolution comes with a null check, so it must happen after all
+        // arguments are evaluated, hence we insert it right before the call.
+        BlockRange().InsertBefore(call, std::move(resolveRange));
+
+        // Swap out the VSD cell argument.
+        LIR::Use vsdCellUse;
+        bool     gotUse = BlockRange().TryGetUse(vsdCellPlaceholder, &vsdCellUse);
+        assert(gotUse);
+        vsdCellUse.ReplaceWith(vsdCellArgNode);
+        vsdCellPlaceholder->SetUnusedValue();
+
+        // Now we can lower the resolver.
+        LowerRange(resolveFirst, resolveLast);
+
+        // That inserted new PUTARG nodes right before the call, so we need to
+        // legalize the existing call's PUTARG_REG nodes.
+        MovePutArgNodesUpToCall(call);
+
+        // Finally update the call target
+        call->gtCallType = CT_INDIRECT;
+        call->gtFlags &= ~GTF_CALL_VIRT_STUB;
+        call->gtCallAddr   = resolve;
+        call->gtCallCookie = nullptr;
+#ifdef FEATURE_READYTORUN
+        call->gtEntryPoint.addr       = nullptr;
+        call->gtEntryPoint.accessType = IAT_VALUE;
+#endif
+
+        if (callTarget != nullptr)
+        {
+            callTarget->SetUnusedValue();
+        }
+
+        //callTarget = resolve;
+    }
+
 
     if (call->IsFastTailCall())
     {
