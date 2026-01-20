@@ -7,7 +7,7 @@ include AsmMacros.inc
 ifdef FEATURE_CACHED_INTERFACE_DISPATCH
 
 EXTERN RhpCidResolve : PROC
-EXTERN RhpUniversalTransitionReturnResult : PROC
+EXTERN RhpUniversalTransitionTailCall : PROC
 
 EXTERN g_pDispatchCache : QWORD
 
@@ -30,7 +30,7 @@ LEAF_ENTRY RhpResolveInterfaceMethodFast, _TEXT
         ;; is this the monomorhpic MethodTable?
         cmp     qword ptr [r11], r10
         jne     RhpResolveInterfaceMethodFast_Hashtable
-        ret
+        jmp     rax
 
       RhpResolveInterfaceMethodFast_Hashtable:
 
@@ -74,7 +74,7 @@ mov         rax,qword ptr [rax+18h]
 pop         r9
 pop         r8
 pop         rcx
-ret  
+jmp         rax
 
 RhpResolveInterfaceMethodFast_65:
 mov         eax,dword ptr [rax]  
@@ -96,7 +96,7 @@ pop         rcx
       RhpResolveInterfaceMethodFast_SlowPath:
         ;; r11 contains indirection cell address
         lea     r10, RhpCidResolve
-        jmp     RhpUniversalTransitionReturnResult
+        jmp     RhpUniversalTransitionTailCall
 
 LEAF_END RhpResolveInterfaceMethodFast, _TEXT
 
