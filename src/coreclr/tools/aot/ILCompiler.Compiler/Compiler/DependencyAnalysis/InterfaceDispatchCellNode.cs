@@ -96,6 +96,9 @@ namespace ILCompiler.DependencyAnalysis
             // Cached monomorphic case - MethodTable and code address
             objData.EmitZeroPointer();
             objData.EmitZeroPointer();
+
+            objData.EmitZeroPointer();
+            objData.EmitZeroPointer();
         }
 
         public override int ClassCode => -2023802120;
