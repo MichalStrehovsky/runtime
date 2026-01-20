@@ -40,6 +40,28 @@ LEAF_ENTRY RhpResolveInterfaceMethodFast, _TEXT
 
         ;; is this the monomorhpic MethodTable?
         cmp     qword ptr [r11 + 16], r10
+        jne     RhpResolveInterfaceMethodFast_Attempt3
+        jmp     rax
+
+      RhpResolveInterfaceMethodFast_Attempt3:
+
+        mov     rax, [r11 + 8 + 32]
+        test    rax, rax
+        jz      RhpResolveInterfaceMethodFast_SlowPath
+
+        ;; is this the monomorhpic MethodTable?
+        cmp     qword ptr [r11 + 32], r10
+        jne     RhpResolveInterfaceMethodFast_Attempt4
+        jmp     rax
+
+      RhpResolveInterfaceMethodFast_Attempt4:
+
+        mov     rax, [r11 + 8 + 48]
+        test    rax, rax
+        jz      RhpResolveInterfaceMethodFast_SlowPath
+
+        ;; is this the monomorhpic MethodTable?
+        cmp     qword ptr [r11 + 48], r10
         jne     RhpResolveInterfaceMethodFast_Hashtable
         jmp     rax
 

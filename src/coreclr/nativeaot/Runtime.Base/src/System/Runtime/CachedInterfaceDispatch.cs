@@ -141,6 +141,16 @@ namespace System.Runtime
                 // TODO: Michal doing lockfree code danger
                 (pDispatchCell + 1)->Code = pTargetCode;
             }
+            else if (Interlocked.CompareExchange(ref (pDispatchCell + 2)->MT, (nint)pInstanceType, 0) == 0)
+            {
+                // TODO: Michal doing lockfree code danger
+                (pDispatchCell + 2)->Code = pTargetCode;
+            }
+            else if (Interlocked.CompareExchange(ref (pDispatchCell + 3)->MT, (nint)pInstanceType, 0) == 0)
+            {
+                // TODO: Michal doing lockfree code danger
+                (pDispatchCell + 3)->Code = pTargetCode;
+            }
             else
             {
                 // Otherwise cache in the hashtable

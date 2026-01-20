@@ -99,6 +99,12 @@ namespace ILCompiler.DependencyAnalysis
 
             objData.EmitZeroPointer();
             objData.EmitZeroPointer();
+
+            objData.EmitZeroPointer();
+            objData.EmitZeroPointer();
+
+            objData.EmitZeroPointer();
+            objData.EmitZeroPointer();
         }
 
         public override int ClassCode => -2023802120;
