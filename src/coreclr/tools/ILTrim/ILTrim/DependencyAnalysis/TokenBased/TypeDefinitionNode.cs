@@ -93,6 +93,14 @@ namespace ILCompiler.DependencyAnalysis
                 // for now (it's on par with IL Linker).
                 yield return new(factory.ConstructedType(ecmaType), "Implicitly constructed valuetype");
             }
+
+            if (ecmaType.IsInterface)
+            {
+                // TODO-SIZE: we did this to make the existing tests pass, but can we scope this down?
+                // If the interface type itself is kept (e.g. via typeof(I), a cast, or reflection),
+                // mark it as used so that implementing types preserve their InterfaceImplementation rows.
+                yield return new(factory.InterfaceUse(ecmaType), "Kept interface type is used");
+            }
         }
 
         public override bool HasConditionalStaticDependencies
