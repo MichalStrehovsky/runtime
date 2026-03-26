@@ -328,9 +328,31 @@ namespace ILCompiler.DependencyAnalysis
         private void RewriteFieldSignature(BlobBuilder blobBuilder, SignatureHeader header)
         {
             var encoder = new BlobEncoder(blobBuilder);
-            var sigEncoder = encoder.FieldSignature();
+            var fieldEncoder = encoder.Field();
 
-            RewriteType(sigEncoder);
+            bool isByRef = false;
+
+        again:
+            SignatureTypeCode typeCode = _blobReader.ReadSignatureTypeCode();
+            if (typeCode == SignatureTypeCode.RequiredModifier || typeCode == SignatureTypeCode.OptionalModifier)
+            {
+                RewriteCustomModifier(typeCode, fieldEncoder.CustomModifiers());
+                goto again;
+            }
+            if (typeCode == SignatureTypeCode.ByReference)
+            {
+                isByRef = true;
+                goto again;
+            }
+
+            if (typeCode == SignatureTypeCode.TypedReference)
+            {
+                fieldEncoder.TypedReference();
+            }
+            else
+            {
+                RewriteType(typeCode, fieldEncoder.Type(isByRef));
+            }
         }
 
         public static void RewriteMemberReferenceSignature(BlobReader signatureReader, TokenMap tokenMap, BlobBuilder blobBuilder)
