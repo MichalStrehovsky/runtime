@@ -60,13 +60,16 @@ namespace ILCompiler.DependencyAnalysis
                     dependencies.Add(factory.CustomAttribute(_module, customAttribute), "Custom attribute of a event");
             }
 
+            // Unlike properties, we root ALL accessor methods when an event is kept.
+            // If you can subscribe to an event, you must be able to unsubscribe — keeping
+            // only add without remove would break runtime semantics.
             EventAccessors accessors = eventDef.GetAccessors();
             if (!accessors.Adder.IsNil)
                 dependencies.Add(factory.MethodDefinition(_module, accessors.Adder), "Event adder");
             if (!accessors.Remover.IsNil)
                 dependencies.Add(factory.MethodDefinition(_module, accessors.Remover), "Event remover");
             if (!accessors.Raiser.IsNil)
-                dependencies.Add(factory.MethodDefinition(_module, accessors.Remover), "Event raiser");
+                dependencies.Add(factory.MethodDefinition(_module, accessors.Raiser), "Event raiser");
             Debug.Assert(accessors.Others.Length == 0);
 
             return dependencies;
