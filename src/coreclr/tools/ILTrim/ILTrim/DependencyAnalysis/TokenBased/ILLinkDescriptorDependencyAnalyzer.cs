@@ -82,8 +82,20 @@ namespace ILCompiler.DependencyAnalysis
             {
                 var ecmaMethod = (EcmaMethod)method;
                 if (_factory.IsModuleTrimmed(ecmaMethod.Module))
+                {
                     _dependencies.Add(_factory.MethodDefinition(ecmaMethod.Module, ecmaMethod.Handle),
                         "Method rooted by descriptor");
+
+                    // When a descriptor roots a virtual method, also mark its virtual slot as used
+                    // so that overrides on constructed types are preserved. This matches illink's
+                    // MarkStep behavior where marking a virtual method propagates to overrides.
+                    if (ecmaMethod.IsVirtual)
+                    {
+                        MethodDesc slotMethod = MetadataVirtualMethodAlgorithm.FindSlotDefiningMethodForVirtualMethod(ecmaMethod);
+                        _dependencies.Add(_factory.VirtualMethodUse((EcmaMethod)slotMethod),
+                            "Virtual method use from descriptor");
+                    }
+                }
             }
 
             protected override MethodDesc? GetMethod(TypeDesc type, string signature)
