@@ -96,7 +96,7 @@ namespace ILCompiler.DependencyAnalysisFramework.Tests
                 {
                     if (nodeA.EndsWith("*") && nodeB.StartsWith("*"))
                     {
-                        return new Tuple<string, string>(nodeA + nodeB, "DynamicRule");
+                        return new Tuple<string, string, string>(nodeA + nodeB, nodeB, "DynamicRule");
                     }
                     return null;
                 });
@@ -121,13 +121,60 @@ namespace ILCompiler.DependencyAnalysisFramework.Tests
             });
         }
 
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void TestDynamicDependencyWithCondition(bool conditionMarked)
+        {
+            TestOnGraphTypes((TestGraph testGraph, DependencyAnalyzerBase<TestGraph> analyzer) =>
+            {
+                testGraph.SetDynamicDependencyRule((string nodeA, string nodeB) =>
+                {
+                    if (nodeA == "A" && nodeB == "B")
+                    {
+                        return new Tuple<string, string, string>("C", "D", "A and B depend on C if D");
+                    }
+                    if (conditionMarked && nodeA == "A" && nodeB == "A")
+                    {
+                        return new Tuple<string, string, string>("E", "A", "A depends on E");
+                    }
+                    return null;
+                });
+
+                testGraph.AddRoot("A", "A is root");
+                testGraph.AddRoot("B", "B is root");
+                if (conditionMarked)
+                {
+                    testGraph.AddStaticRule("E", "D", "E depends on D");
+                }
+
+                List<string> results = testGraph.AnalysisResults;
+
+                Assert.Contains("A", results);
+                Assert.Contains("B", results);
+                if (conditionMarked)
+                {
+                    Assert.Contains("C", results);
+                    Assert.Contains("D", results);
+                    Assert.Contains("E", results);
+                    Assert.True(results.Count == 5);
+                }
+                else
+                {
+                    Assert.DoesNotContain("C", results);
+                    Assert.DoesNotContain("D", results);
+                    Assert.True(results.Count == 2);
+                }
+            });
+        }
+
         private void BuildGraphUsingAllTypesOfRules(TestGraph testGraph, DependencyAnalyzerBase<TestGraph> analyzer)
         {
             testGraph.SetDynamicDependencyRule((string nodeA, string nodeB) =>
             {
                 if (nodeA.EndsWith("*") && nodeB.StartsWith("*"))
                 {
-                    return new Tuple<string, string>(nodeA + nodeB, "DynamicRule");
+                    return new Tuple<string, string, string>(nodeA + nodeB, nodeB, "DynamicRule");
                 }
                 return null;
             });

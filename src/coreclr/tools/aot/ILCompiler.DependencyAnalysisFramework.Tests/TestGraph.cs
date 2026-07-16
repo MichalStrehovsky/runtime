@@ -52,7 +52,7 @@ namespace ILCompiler.DependencyAnalysisFramework.Tests
                 List<CombinedDependencyListEntry> returnValueWithData = null;
                 for (int i = firstNode; i < markedNodes.Count; i++)
                 {
-                    Tuple<string,string> nextResult = context._dynamicDependencyComputer(this.Data, ((TestNode)markedNodes[i]).Data);
+                    Tuple<string, string, string> nextResult = context._dynamicDependencyComputer(this.Data, ((TestNode)markedNodes[i]).Data);
 
                     if (nextResult != null)
                     {
@@ -62,7 +62,7 @@ namespace ILCompiler.DependencyAnalysisFramework.Tests
                             returnValue = returnValueWithData;
                         }
 
-                        returnValueWithData.Add(new CombinedDependencyListEntry(context.GetNode(nextResult.Item1), markedNodes[i], nextResult.Item2));
+                        returnValueWithData.Add(new CombinedDependencyListEntry(context.GetNode(nextResult.Item1), context.GetNode(nextResult.Item2), nextResult.Item3));
                     }
                 }
 
@@ -73,7 +73,7 @@ namespace ILCompiler.DependencyAnalysisFramework.Tests
         Dictionary<string, HashSet<Tuple<string, string>>> _staticNonConditionalRules = new Dictionary<string, HashSet<Tuple<string, string>>>();
         Dictionary<string, HashSet<Tuple<string, Tuple<string, string>>>> _staticConditionalRules = new Dictionary<string, HashSet<Tuple<string, Tuple<string, string>>>>();
 
-        Func<string, string, Tuple<string,string>> _dynamicDependencyComputer;
+        Func<string, string, Tuple<string, string, string>> _dynamicDependencyComputer;
         Dictionary<string, TestNode> _nodes = new Dictionary<string, TestNode>();
         DependencyAnalyzerBase<TestGraph> _analyzer;
 
@@ -100,7 +100,7 @@ namespace ILCompiler.DependencyAnalysisFramework.Tests
             knownEdges.Add(new Tuple<string, Tuple<string, string>>(dependedOn, new Tuple<string,string>(otherdepender, reason)));
         }
 
-        public void SetDynamicDependencyRule(Func<string, string, Tuple<string, string>> dynamicDependencyComputer)
+        public void SetDynamicDependencyRule(Func<string, string, Tuple<string, string, string>> dynamicDependencyComputer)
         {
             _dynamicDependencyComputer = dynamicDependencyComputer;
         }
