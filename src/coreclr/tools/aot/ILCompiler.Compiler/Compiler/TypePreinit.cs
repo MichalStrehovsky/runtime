@@ -313,12 +313,19 @@ namespace ILCompiler
                     break;
 
                     case ILOpcode.dup:
+                    {
                         if (stack.Count == 0)
                         {
                             ThrowHelper.ThrowInvalidProgramException();
                         }
-                        stack.Push(stack.Peek());
+
+                        StackEntry entry = stack.Peek();
+                        if (entry.Value is BaseValueTypeValue value)
+                            entry = new StackEntry(entry.ValueKind, value.Clone());
+
+                        stack.Push(entry);
                         break;
+                    }
 
                     case ILOpcode.pop:
                     {
