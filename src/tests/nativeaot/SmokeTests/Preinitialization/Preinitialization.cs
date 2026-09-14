@@ -78,6 +78,7 @@ internal class Program
         TestDuplicateCallArguments.Run();
         TestSpanAssignmentAliases.Run();
         TestRvaSpanIdentity.Run();
+        TestNestedDelegateIdentity.Run();
 #else
         Console.WriteLine("Preinitialization is disabled in multimodule builds for now. Skipping test.");
 #endif
@@ -2616,6 +2617,44 @@ class TestRvaSpanIdentity
         Assert.AreEqual(true, s_same);
         Assert.AreEqual(false, s_differentOffset);
         Assert.AreEqual(false, s_array);
+    }
+}
+
+class TestNestedDelegateIdentity
+{
+    class Target
+    {
+        public int Read() => 42;
+    }
+
+    class Inner
+    {
+        public static readonly Target Object = new Target();
+        public static readonly Target OtherObject = new Target();
+        public static readonly Func<int> Delegate = Object.Read;
+    }
+
+    class Middle
+    {
+        public static readonly Target Object = Inner.Object;
+        public static readonly Func<int> Delegate = Inner.Delegate;
+    }
+
+    static readonly Target s_target = Inner.Object;
+    static readonly Func<int> s_delegate = Inner.Delegate;
+    static readonly Target s_otherTarget = Inner.OtherObject;
+    static readonly Target s_indirectTarget = Middle.Object;
+    static readonly Func<int> s_indirectDelegate = Middle.Delegate;
+
+    public static void Run()
+    {
+        Assert.IsPreinitialized(typeof(TestNestedDelegateIdentity));
+        Assert.AreSame(s_target, s_delegate.Target);
+        Assert.AreSame(s_target, s_indirectTarget);
+        Assert.AreSame(s_target, s_indirectDelegate.Target);
+        Assert.AreSame(s_delegate, s_indirectDelegate);
+        Assert.AreEqual(false, ReferenceEquals(s_target, s_otherTarget));
+        Assert.AreEqual(42, s_delegate());
     }
 }
 

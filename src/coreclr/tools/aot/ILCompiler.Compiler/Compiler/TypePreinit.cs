@@ -46,6 +46,9 @@ namespace ILCompiler
         private readonly Dictionary<MetadataType, NestedPreinitResult> _nestedPreinitResults = new Dictionary<MetadataType, NestedPreinitResult>();
         private readonly Dictionary<EcmaField, byte[]> _rvaFieldDatas = new Dictionary<EcmaField, byte[]>();
 
+        // Allocation identities must not depend on the caller's instruction count in nested cctors.
+        private int _allocationCounter;
+
         private TypePreinit(MetadataType owningType, CompilationModuleGroup compilationGroup, ILProvider ilProvider, TypePreinitializationPolicy policy, ReadOnlyFieldPolicy readOnlyPolicy, FlowAnnotations flowAnnotations)
         {
             _type = owningType;
@@ -121,16 +124,6 @@ namespace ILCompiler
                 recursionProtect ??= new Stack<MethodDesc>();
                 recursionProtect.Push(callingMethod);
 
-                // Since we don't reset the instruction counter as we interpret the nested cctor,
-                // remember the instruction counter before we start interpreting so that we can subtract
-                // the instructions later when we convert object instances allocated in the nested
-                // cctor to foreign instances in the currently analyzed cctor.
-                // E.g. if the nested cctor allocates a new object at the beginning of the cctor,
-                // we should treat it as a ForeignTypeInstance with allocation site ID 0, not allocation
-                // site ID of `instructionCounter + 0`.
-                // We could also reset the counter, but we use the instruction counter as a complexity cutoff
-                // and resetting it would lead to unpredictable analysis durations.
-                int baseInstructionCounter = instructionCounter;
                 Status status = nestedPreinit.TryScanMethod(type.GetStaticConstructor(), null, recursionProtect, ref instructionCounter, out Value _);
                 if (!status.IsSuccessful)
                 {
@@ -139,7 +132,7 @@ namespace ILCompiler
                 }
                 recursionProtect.Pop();
 
-                result = new NestedPreinitResult(nestedPreinit._fieldValues, baseInstructionCounter);
+                result = new NestedPreinitResult(nestedPreinit._fieldValues);
 
                 _nestedPreinitResults.Add(type, result);
             }
@@ -307,7 +300,7 @@ namespace ILCompiler
                             return Status.Fail(methodIL.OwningMethod, opcode, "Align8");
                         }
 
-                        AllocationSite allocSite = new AllocationSite(_type, instructionCounter);
+                        AllocationSite allocSite = new AllocationSite(_type, _allocationCounter++);
                         stack.Push(new ArrayInstance(elementType.MakeArrayType(), elementCount, allocSite));
                     }
                     break;
@@ -610,7 +603,7 @@ namespace ILCompiler
                             ctorParameters[i + 1] = stack.PopIntoLocation(GetArgType(ctor, i + 1));
                         }
 
-                        AllocationSite allocSite = new AllocationSite(_type, instructionCounter);
+                        AllocationSite allocSite = new AllocationSite(_type, _allocationCounter++);
 
                         Value instance;
                         if (owningType.IsDelegate)
@@ -1717,7 +1710,7 @@ namespace ILCompiler
                                 return Status.Fail(methodIL.OwningMethod, opcode, "Align8");
 
                             Value value = stack.PopIntoLocation(type);
-                            AllocationSite allocSite = new AllocationSite(_type, instructionCounter);
+                            AllocationSite allocSite = new AllocationSite(_type, _allocationCounter++);
                             if (!ObjectInstance.TryBox((DefType)type, value, allocSite, out ObjectInstance boxedResult))
                             {
                                 return Status.Fail(methodIL.OwningMethod, opcode);
@@ -2907,7 +2900,7 @@ namespace ILCompiler
                 return true;
             }
 
-            public override ReferenceTypeValue ToForeignInstance(int baseInstructionCounter, TypePreinit preinitContext)
+            public override ReferenceTypeValue ToForeignInstance(TypePreinit preinitContext)
             {
                 if (!preinitContext._internedTypes.TryGetValue(TypeRepresented, out RuntimeTypeValue result))
                 {
@@ -3206,27 +3199,27 @@ namespace ILCompiler
                 return true;
             }
 
-            public abstract ReferenceTypeValue ToForeignInstance(int baseInstructionCounter, TypePreinit preinitContext);
+            public abstract ReferenceTypeValue ToForeignInstance(TypePreinit preinitContext);
         }
 
         private readonly struct AllocationSite : IEquatable<AllocationSite>
         {
             public MetadataType OwningType { get; }
-            public int InstructionCounter { get; }
-            public AllocationSite(MetadataType type, int instructionCounter)
+            public int Id { get; }
+            public AllocationSite(MetadataType type, int id)
             {
                 Debug.Assert(type.HasStaticConstructor);
                 OwningType = type;
-                InstructionCounter = instructionCounter;
+                Id = id;
             }
 
             public bool Equals(AllocationSite other) =>
                 OwningType == other.OwningType
-                && InstructionCounter == other.InstructionCounter;
+                && Id == other.Id;
 
             public override bool Equals(object obj) => obj is AllocationSite other && Equals(other);
 
-            public override int GetHashCode() => HashCode.Combine(OwningType, InstructionCounter);
+            public override int GetHashCode() => HashCode.Combine(OwningType, Id);
         }
 
         /// <summary>
@@ -3242,19 +3235,16 @@ namespace ILCompiler
                 AllocationSite = allocationSite;
             }
 
-            public override ReferenceTypeValue ToForeignInstance(int baseInstructionCounter, TypePreinit preinitContext)
+            public override ReferenceTypeValue ToForeignInstance(TypePreinit preinitContext)
             {
-                AllocationSite foreignAllocationSite = new AllocationSite(
-                    AllocationSite.OwningType,
-                    AllocationSite.InstructionCounter - baseInstructionCounter);
-                return preinitContext.GetOrCreateForeignInstance(Type, foreignAllocationSite, this);
+                return preinitContext.GetOrCreateForeignInstance(Type, AllocationSite, this);
             }
 
             public override bool GetRawData(NodeFactory factory, out object data)
             {
                 if (this is ISerializableReference serializableRef)
                 {
-                    data = factory.SerializedFrozenObject(AllocationSite.OwningType, AllocationSite.InstructionCounter, serializableRef);
+                    data = factory.SerializedFrozenObject(AllocationSite.OwningType, AllocationSite.Id, serializableRef);
                     return true;
                 }
                 data = null;
@@ -3350,7 +3340,7 @@ namespace ILCompiler
 
             public override void WriteFieldData(ref ObjectDataBuilder builder, NodeFactory factory)
             {
-                builder.EmitPointerReloc(factory.SerializedFrozenObject(AllocationSite.OwningType, AllocationSite.InstructionCounter, this));
+                builder.EmitPointerReloc(factory.SerializedFrozenObject(AllocationSite.OwningType, AllocationSite.Id, this));
             }
 
             public bool IsKnownImmutable => _methodPointed.Signature.IsStatic;
@@ -3418,7 +3408,7 @@ namespace ILCompiler
 
             public override void WriteFieldData(ref ObjectDataBuilder builder, NodeFactory factory)
             {
-                builder.EmitPointerReloc(factory.SerializedFrozenObject(AllocationSite.OwningType, AllocationSite.InstructionCounter, this));
+                builder.EmitPointerReloc(factory.SerializedFrozenObject(AllocationSite.OwningType, AllocationSite.Id, this));
             }
 
             public void WriteContent(ref ObjectDataBuilder builder, ISymbolNode thisNode, NodeFactory factory)
@@ -3467,7 +3457,7 @@ namespace ILCompiler
             {
                 if (Data is ISerializableReference serializableReference)
                 {
-                    builder.EmitPointerReloc(factory.SerializedFrozenObject(AllocationSite.OwningType, AllocationSite.InstructionCounter, serializableReference));
+                    builder.EmitPointerReloc(factory.SerializedFrozenObject(AllocationSite.OwningType, AllocationSite.Id, serializableReference));
                 }
                 else
                 {
@@ -3475,7 +3465,7 @@ namespace ILCompiler
                 }
             }
 
-            public override ReferenceTypeValue ToForeignInstance(int baseInstructionCounter, TypePreinit preinitContext)
+            public override ReferenceTypeValue ToForeignInstance(TypePreinit preinitContext)
             {
                 return preinitContext.GetOrCreateForeignInstance(Type, AllocationSite, Data);
             }
@@ -3537,7 +3527,7 @@ namespace ILCompiler
                 return true;
             }
 
-            public override ReferenceTypeValue ToForeignInstance(int baseInstructionCounter, TypePreinit preinitContext)
+            public override ReferenceTypeValue ToForeignInstance(TypePreinit preinitContext)
             {
                 string value = ValueAsString;
                 if (!preinitContext._internedStrings.TryGetValue(value, out StringInstance result))
@@ -3602,7 +3592,7 @@ namespace ILCompiler
 
             public override void WriteFieldData(ref ObjectDataBuilder builder, NodeFactory factory)
             {
-                builder.EmitPointerReloc(factory.SerializedFrozenObject(AllocationSite.OwningType, AllocationSite.InstructionCounter, this));
+                builder.EmitPointerReloc(factory.SerializedFrozenObject(AllocationSite.OwningType, AllocationSite.Id, this));
             }
 
             public void WriteContent(ref ObjectDataBuilder builder, ISymbolNode thisNode, NodeFactory factory)
@@ -3758,10 +3748,9 @@ namespace ILCompiler
         private readonly struct NestedPreinitResult
         {
             private readonly Dictionary<FieldDesc, Value> _fieldValues;
-            private readonly int _baseInstructionCounter;
 
-            public NestedPreinitResult(Dictionary<FieldDesc, Value> fieldValues, int baseInstructionCounter)
-                => (_fieldValues, _baseInstructionCounter) = (fieldValues, baseInstructionCounter);
+            public NestedPreinitResult(Dictionary<FieldDesc, Value> fieldValues)
+                => _fieldValues = fieldValues;
 
             public bool TryGetFieldValue(TypePreinit context, FieldDesc field, out Value value)
             {
@@ -3769,7 +3758,7 @@ namespace ILCompiler
 
                 if (fieldValue is ReferenceTypeValue referenceType)
                 {
-                    value = referenceType.ToForeignInstance(_baseInstructionCounter, context);
+                    value = referenceType.ToForeignInstance(context);
                     return true;
                 }
                 else if (fieldValue is BaseValueTypeValue)
