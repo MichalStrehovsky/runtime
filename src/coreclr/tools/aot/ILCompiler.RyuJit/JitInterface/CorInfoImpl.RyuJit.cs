@@ -1686,7 +1686,8 @@ namespace Internal.JitInterface
                     // If this is LDVIRTFTN of an interface method that is part of a verifiable delegate creation sequence,
                     // RyuJIT is not going to use this value.
                     pResult->exactContextNeedsRuntimeLookup = false;
-                    pResult->codePointerOrStubLookup.constLookup = CreateConstLookupToSymbol(_compilation.NodeFactory.ExternFunctionSymbol(new Utf8String("NYI_LDVIRTFTN"u8)));
+                    pResult->codePointerOrStubLookup.constLookup.addr = InvalidHandle;
+                    pResult->codePointerOrStubLookup.constLookup.accessType = InfoAccessType.IAT_VALUE;
                 }
                 else
                 {
