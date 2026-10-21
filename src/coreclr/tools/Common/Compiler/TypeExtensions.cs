@@ -37,48 +37,6 @@ namespace ILCompiler
         }
 
         /// <summary>
-        /// Gets a value indicating whether the method requires a hidden instantiation argument in addition
-        /// to the formal arguments defined in the method signature.
-        /// </summary>
-        public static bool RequiresInstArg(this MethodDesc method)
-        {
-            return method.IsSharedByGenericInstantiations &&
-                (method.HasInstantiation || method.Signature.IsStatic || method.ImplementationType.IsValueType || (method.ImplementationType.IsInterface && !method.IsAbstract));
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether the method acquires the generic context from a hidden
-        /// instantiation argument that points to the method's generic dictionary.
-        /// </summary>
-        public static bool RequiresInstMethodDescArg(this MethodDesc method)
-        {
-            return method.HasInstantiation && method.IsSharedByGenericInstantiations;
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether the method acquires the generic context from a hidden
-        /// instantiation argument that points to the generic dictionary of the method's owning type.
-        /// </summary>
-        public static bool RequiresInstMethodTableArg(this MethodDesc method)
-        {
-            return (method.Signature.IsStatic || method.ImplementationType.IsValueType || (method.ImplementationType.IsInterface && !method.IsAbstract)) &&
-                method.IsSharedByGenericInstantiations &&
-                !method.HasInstantiation;
-        }
-
-        /// <summary>
-        /// Gets a value indicating whether the method acquires the generic context from the this pointer.
-        /// </summary>
-        public static bool AcquiresInstMethodTableFromThis(this MethodDesc method)
-        {
-            return method.IsSharedByGenericInstantiations &&
-                !method.HasInstantiation &&
-                !method.Signature.IsStatic &&
-                !method.ImplementationType.IsValueType &&
-                !(method.ImplementationType.IsInterface && !method.IsAbstract);
-        }
-
-        /// <summary>
         /// Returns true if '<paramref name="method"/>' is the "Address" method on multidimensional array types.
         /// </summary>
         public static bool IsArrayAddressMethod(this MethodDesc method)

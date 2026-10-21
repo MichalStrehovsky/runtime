@@ -919,7 +919,7 @@ namespace Internal.JitInterface
             if (method.IsAsyncCall())
                 sig->callConv |= CorInfoCallConv.CORINFO_CALLCONV_ASYNCCALL;
 
-            if (method is Internal.IL.Stubs.ILStubMethod)
+            if (method.GetTypicalMethodDefinition() is Internal.IL.Stubs.ILStubMethod)
                 sig->flags |= CorInfoSigInfoFlags.CORINFO_SIGFLAG_IL_STUB;
 
             // Does the method have a hidden parameter?

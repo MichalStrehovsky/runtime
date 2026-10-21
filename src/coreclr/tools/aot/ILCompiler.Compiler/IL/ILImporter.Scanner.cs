@@ -911,9 +911,9 @@ namespace Internal.IL
                     {
                         ISymbolNode instParam = null;
 
-                        if (!_canonMethod.IsSharedByGenericInstantiations)
+                        if (!_canonMethod.RequiresInstArg() && !_canonMethod.AcquiresInstMethodTableFromThis())
                         {
-                            // Some handemitted IL helpers will call __Canon methods directly from unshared context.
+                            // Some handemitted IL helpers supply the generic context explicitly.
                             // This is fine, we just don't report any dependencies for the exact instantiation.
                         }
                         else if (targetMethod.RequiresInstMethodDescArg())

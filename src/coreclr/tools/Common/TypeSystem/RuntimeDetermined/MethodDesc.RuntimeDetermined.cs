@@ -59,17 +59,6 @@ namespace Internal.TypeSystem
         }
 
         /// <summary>
-        /// Gets a value indicating whether this is a shared method body.
-        /// </summary>
-        public bool IsSharedByGenericInstantiations
-        {
-            get
-            {
-                return IsCanonicalMethod(CanonicalFormKind.Any);
-            }
-        }
-
-        /// <summary>
         /// Gets a value indicating whether this is a canonical method that will only become concrete
         /// at runtime (after supplying the generic context).
         /// </summary>

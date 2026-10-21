@@ -63,6 +63,11 @@ namespace ILCompiler
     // Contains functionality related to instantiating thunks for default interface methods
     public partial class CompilerTypeSystemContext
     {
+        protected override bool RequiresInstArg(MethodDesc method)
+        {
+            return base.RequiresInstArg(method) && !IsDefaultInterfaceMethodImplementationInstantiationThunk(method);
+        }
+
         /// <summary>
         /// For a shared (canonical) default interface method, gets a method that can be used to call the
         /// method on a specific implementing class.
@@ -94,10 +99,10 @@ namespace ILCompiler
 
             // Get a method that will inject the appropriate instantiation context to the
             // target default interface method.
-            var methodKey = new DefaultInterfaceMethodImplementationInstantiationThunkHashtableKey(targetMethod, interfaceIndex, useContextFromRuntime);
+            var methodKey = new DefaultInterfaceMethodImplementationInstantiationThunkHashtableKey(targetMethod.GetTypicalMethodDefinition(), interfaceIndex, useContextFromRuntime);
             MethodDesc thunk = _dimThunkHashtable.GetOrCreateValue(methodKey);
 
-            return thunk;
+            return GetMethodForInstantiatedType(thunk, (InstantiatedType)targetMethod.OwningType);
         }
 
         private struct DefaultInterfaceMethodImplementationInstantiationThunkHashtableKey
@@ -148,7 +153,7 @@ namespace ILCompiler
         /// </summary>
         public bool IsDefaultInterfaceMethodImplementationInstantiationThunk(MethodDesc method)
         {
-            return method is DefaultInterfaceMethodImplementationInstantiationThunk;
+            return method.GetTypicalMethodDefinition() is DefaultInterfaceMethodImplementationInstantiationThunk;
         }
 
         /// <summary>
@@ -156,7 +161,10 @@ namespace ILCompiler
         /// </summary>
         public MethodDesc GetTargetOfDefaultInterfaceMethodImplementationInstantiationThunk(MethodDesc method)
         {
-            return ((DefaultInterfaceMethodImplementationInstantiationThunk)method).TargetMethod;
+            MethodDesc targetMethod = ((DefaultInterfaceMethodImplementationInstantiationThunk)method.GetTypicalMethodDefinition()).TargetMethod;
+            return method.OwningType is InstantiatedType owningType
+                ? GetMethodForInstantiatedType(targetMethod, owningType)
+                : targetMethod;
         }
 
         /// <summary>
@@ -174,6 +182,7 @@ namespace ILCompiler
             {
                 Debug.Assert(targetMethod.OwningType.IsInterface);
                 Debug.Assert(!targetMethod.Signature.IsStatic);
+                Debug.Assert(targetMethod.IsTypicalMethodDefinition);
 
                 _targetMethod = targetMethod;
                 _interfaceIndex = interfaceIndex;
@@ -185,7 +194,7 @@ namespace ILCompiler
 
             public override TypeSystemContext Context => _targetMethod.Context;
 
-            public override TypeDesc OwningType => Context.GetWellKnownType(WellKnownType.Object);
+            public override TypeDesc OwningType => _targetMethod.OwningType;
 
             public int InterfaceIndex => _interfaceIndex;
 
@@ -275,7 +284,7 @@ namespace ILCompiler
                     codeStream.Emit(ILOpcode.call, emit.NewToken(Context.GetCoreLibEntryPoint("System.Runtime.CompilerServices"u8, "AsyncHelpers"u8, "TailAwait"u8, null)));
                 }
 
-                codeStream.Emit(ILOpcode.call, emit.NewToken(_targetMethod));
+                codeStream.Emit(ILOpcode.call, emit.NewToken(_targetMethod.InstantiateAsOpen()));
                 codeStream.Emit(ILOpcode.ret);
 
                 return emit.Link(this);

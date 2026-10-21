@@ -43,6 +43,15 @@ namespace Internal.TypeSystem
         }
 
         /// <summary>
+        /// Determines whether a method requires a hidden instantiation argument.
+        /// </summary>
+        protected internal virtual bool RequiresInstArg(MethodDesc method)
+        {
+            return method.IsSharedByGenericInstantiations &&
+                (method.HasInstantiation || method.Signature.IsStatic || method.OwningType.IsValueType || (method.OwningType.IsInterface && !method.IsAbstract));
+        }
+
+        /// <summary>
         /// Returns true if and only if the '<paramref name="type"/>' is __Canon or __UniversalCanon
         /// that matches the <paramref name="kind"/> parameter.
         /// </summary>
