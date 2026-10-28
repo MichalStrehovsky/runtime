@@ -256,9 +256,9 @@ static_assert(sizeof(WasmEHEnumState) <= sizeof(EHEnumState), "WasmEHEnumState t
 
 bool WasmCodeManager::EHEnumInit(MethodInfo * pMethodInfo, PTR_VOID * pMethodStartAddress, EHEnumState * pEHEnumStateOut)
 {
-    assert(pMethodInfo != NULL);
-    assert(pMethodStartAddress != NULL);
-    assert(pEHEnumStateOut != NULL);
+    ASSERT(pMethodInfo != nullptr);
+    ASSERT(pMethodStartAddress != nullptr);
+    ASSERT(pEHEnumStateOut != nullptr);
 
     WasmMethodInfo * pNativeMethodInfo = (WasmMethodInfo *)pMethodInfo;
 
@@ -282,8 +282,8 @@ bool WasmCodeManager::EHEnumInit(MethodInfo * pMethodInfo, PTR_VOID * pMethodSta
 
 bool WasmCodeManager::EHEnumNext(EHEnumState * pEHEnumState, EHClause * pEHClauseOut)
 {
-    assert(pEHEnumState != NULL);
-    assert(pEHClauseOut != NULL);
+    ASSERT(pEHEnumState != nullptr);
+    ASSERT(pEHClauseOut != nullptr);
 
     WasmEHEnumState * pEnumState = (WasmEHEnumState *)pEHEnumState;
     if (pEnumState->uClause >= pEnumState->nClauses)
