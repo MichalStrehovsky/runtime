@@ -74,6 +74,8 @@ namespace ILCompiler
         private readonly SortedSet<TypeDesc> _typesWithConstructedEETypesGenerated = new SortedSet<TypeDesc>(TypeSystemComparer.Instance);
         private readonly SortedSet<MethodDesc> _reflectableMethods = new SortedSet<MethodDesc>(TypeSystemComparer.Instance);
         private readonly SortedSet<IMethodBodyNode> _methodBodiesGenerated = new SortedSet<IMethodBodyNode>(CompilerComparer.Instance);
+        private readonly SortedSet<UnboxingStubNode> _unboxingStubsGenerated = new SortedSet<UnboxingStubNode>(CompilerComparer.Instance);
+        private HashSet<MethodDesc> _unboxingStubTargets;
         private readonly SortedSet<FrozenObjectNode> _frozenObjects = new SortedSet<FrozenObjectNode>(CompilerComparer.Instance);
         private readonly SortedSet<TypeGVMEntriesNode> _typeGVMEntries
             = new SortedSet<TypeGVMEntriesNode>(Comparer<TypeGVMEntriesNode>.Create((a, b) => TypeSystemComparer.Instance.Compare(a.AssociatedType, b.AssociatedType)));
@@ -226,6 +228,9 @@ namespace ILCompiler
             var stackTraceLineNumbersNode = new StackTraceLineNumbersNode(commonFixupsTableNode, stackTraceDocumentsNode);
             header.Add(BlobIdToReadyToRunSection(ReflectionMapBlob.BlobIdStackTraceLineNumbers), stackTraceLineNumbersNode);
 
+            if (nodeFactory.Target.IsWasm)
+                header.Add(BlobIdToReadyToRunSection(ReflectionMapBlob.UnboxingStubMap), new UnboxingStubMapNode());
+
             var interfaceDispatchCellInfoNode = new InterfaceDispatchCellInfoSectionNode(nativeReferencesTableNode);
             header.Add(ReadyToRunSectionType.InterfaceDispatchCellInfoRegion, interfaceDispatchCellInfoNode);
 
@@ -269,6 +274,9 @@ namespace ILCompiler
             {
                 _methodBodiesGenerated.Add(methodBodyNode);
             }
+
+            if (obj is UnboxingStubNode unboxingStub)
+                _unboxingStubsGenerated.Add(unboxingStub);
 
             IMethodNode methodNode = methodBodyNode;
             if (methodNode != null)
@@ -1124,6 +1132,37 @@ namespace ILCompiler
         internal IEnumerable<IMethodBodyNode> GetCompiledMethodBodies()
         {
             return _methodBodiesGenerated;
+        }
+
+        internal IEnumerable<UnboxingStubNode> GetUnboxingStubs() => _unboxingStubsGenerated;
+
+        /// <summary>
+        /// Gets a value indicating whether the method is the target of a generated unboxing stub.
+        /// Only valid after the dependency graph has been fully expanded.
+        /// </summary>
+        internal bool IsUnboxingStubTarget(MethodDesc method, NodeFactory factory)
+        {
+            if (_unboxingStubTargets is null)
+            {
+                var targets = new HashSet<MethodDesc>();
+                foreach (UnboxingStubNode stub in _unboxingStubsGenerated)
+                {
+                    targets.Add(stub.Method);
+                }
+
+                foreach (IMethodBodyNode body in _methodBodiesGenerated)
+                {
+                    if (body is ISpecialUnboxThunkNode { IsSpecialUnboxingThunk: true } thunk
+                        && thunk.GetUnboxingThunkTarget(factory) is IMethodNode target)
+                    {
+                        targets.Add(target.Method);
+                    }
+                }
+
+                _unboxingStubTargets = targets;
+            }
+
+            return _unboxingStubTargets.Contains(method);
         }
 
         internal bool TypeGeneratesEEType(TypeDesc type)
